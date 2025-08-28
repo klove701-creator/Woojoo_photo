@@ -25,7 +25,7 @@
   <!-- Splash Screen -->
   <div id="splashScreen" class="splash-screen">
     <div class="splash-images" id="splashImages"></div>
-    <div style="position: relative; z-index: 10; text-align: center;">
+    <div class="splash-content">
       <div class="splash-logo">🌟 우주성장일지</div>
       <div class="splash-loading">추억을 불러오는 중...</div>
       <div class="splash-progress">
@@ -92,9 +92,6 @@
           <button id="memberAdd" class="btn secondary">추가</button>
           <button id="membersReset" class="btn secondary">기본으로</button>
         </div>
-        <div style="margin-top:8px;">
-          <button id="familyActivityBtn" class="btn secondary" style="width:100%;">👥 가족 활동 기록 보기</button>
-        </div>
       </div>
       
       <!-- Albums -->
@@ -104,24 +101,6 @@
         <div style="display:flex; gap:8px; margin-top:8px">
           <input id="albumInput" type="text" placeholder="예: 100일, 첫걸음마" style="flex:1" />
           <button id="albumAdd" class="btn secondary">추가</button>
-        </div>
-      </div>
-      
-      <!-- Duplicate Management -->
-      <div style="margin-top:16px">
-        <div style="font-weight:700; margin:8px 0">🗂️ 중복 사진 관리</div>
-        <button id="duplicateManagerBtn2" class="btn secondary">중복 사진 찾기</button>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px;">
-          같은 파일명과 크기를 가진 중복 사진을 찾아 정리해요
-        </div>
-      </div>
-      
-      <!-- Activity Log -->
-      <div style="margin-top:16px">
-        <div style="font-weight:700; margin:8px 0">👥 가족 활동 로그</div>
-        <button id="activityLogBtn" class="btn secondary">활동 기록 보기</button>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px;">
-          누가 언제 접속했는지 확인할 수 있어요
         </div>
       </div>
       
@@ -176,7 +155,6 @@
             <div class="album-manager-header">
               <div style="font-weight:700">🗂️ 앨범별 보기</div>
               <div style="display:flex; gap:8px;">
-                <button id="duplicateManagerBtn" class="btn secondary">🗂️ 중복정리</button>
                 <button id="multiselectBtn" class="btn secondary">다중선택</button>
               </div>
             </div>
@@ -298,19 +276,6 @@
     
     <div class="day-grid-content">
       <div class="day-grid" id="dayGrid"></div>
-    </div>
-  </div>
-
-  <!-- Modals -->
-  <div id="duplicateModal" class="modal">
-    <div class="panel" style="max-width: 800px;">
-      <div id="duplicateContent"></div>
-    </div>
-  </div>
-
-  <div id="activityLogModal" class="modal">
-    <div class="panel" style="max-width: 600px;">
-      <div id="activityLogContent"></div>
     </div>
   </div>
 

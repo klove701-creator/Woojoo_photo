@@ -194,12 +194,10 @@ export class App {
     this.currentUser = member;
     localStorage.setItem('currentUser', member);
     this.photoManager.setCurrentUser(member);
-    this.photoManager.logActivity('login');
     this.showApp();
   }
 
   logout() {
-    this.photoManager.logActivity('logout');
     this.currentUser = null;
     localStorage.removeItem('currentUser');
     this.photoManager.setCurrentUser(null);

@@ -1240,6 +1240,18 @@ input:focus, select:focus{
   pointer-events: none;
 }
 
+.splash-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .splash-logo {
   font-size: 28px;
   font-weight: 700;

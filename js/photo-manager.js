@@ -38,8 +38,6 @@ export class PhotoManager {
     for (const file of files) {
       try {
         await this.uploadSingleFile(file);
-        // 활동 로그 기록
-        await this.logActivity('upload');
       } catch (error) {
         console.error(`파일 업로드 실패: ${file.name}`, error);
         alert(`파일 업로드 실패: ${file.name}\n${error.message}`);
@@ -256,38 +254,6 @@ export class PhotoManager {
     }
   }
 
-  // 중복 사진 찾기
-  findDuplicatePhotos(photos) {
-    console.log('🔍 중복 사진 검사 시작...');
-    
-    const duplicates = [];
-    const photoMap = new Map();
-    
-    photos.forEach((photo) => {
-      // 파일명에서 확장자 제거한 베이스명 + 크기로 키 생성
-      const baseName = getBaseName(photo.originalFileName || photo.nameBase || '');
-      const fileSize = photo.fileSize || 0;
-      const key = `${baseName}_${fileSize}`;
-      
-      if (photoMap.has(key)) {
-        // 중복 발견!
-        const originalPhoto = photoMap.get(key);
-        duplicates.push({
-          key: key,
-          original: originalPhoto,
-          duplicate: photo,
-          fileName: baseName,
-          fileSize: fileSize
-        });
-      } else {
-        photoMap.set(key, photo);
-      }
-    });
-    
-    console.log(`🎯 중복 사진 ${duplicates.length}개 발견`);
-    return duplicates;
-  }
-
   // 여러 사진 일괄 삭제
   async deleteMultiplePhotos(photos) {
     const results = [];
@@ -305,31 +271,6 @@ export class PhotoManager {
     return results;
   }
 
-  // 활동 로그 기록
-  async logActivity(action = 'upload') {
-    if (!this.currentUser) return;
-    
-    const logEntry = {
-      user: this.currentUser,
-      action: action, // 'login', 'upload', 'comment', 'logout' 등
-      timestamp: new Date().toISOString(),
-      sessionId: this.getSessionId()
-    };
-    
-    try {
-      await this.storageManager.logActivity(logEntry);
-    } catch (error) {
-      console.warn('활동 로그 저장 실패:', error);
-    }
-  }
-
-  // 세션 ID 생성/반환
-  getSessionId() {
-    if (!this._sessionId) {
-      this._sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-    return this._sessionId;
-  }
 
   // 동영상 길이 가져오기 (저장된 duration 사용)
   getVideoDuration(photo) {
@@ -390,11 +331,4 @@ export class PhotoManager {
     return badges;
   }
 
-  // 파일 크기 포맷팅
-  formatFileSize(bytes) {
-    if (!bytes) return '알 수 없음';
-    if (bytes < 1024) return bytes + 'B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
-  }
 }
