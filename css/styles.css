@@ -1287,6 +1287,7 @@ input:focus, select:focus{
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .splash-progress-bar {
