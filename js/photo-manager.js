@@ -1,0 +1,400 @@
+import { 
+  isImgType, 
+  isVidType, 
+  getBaseName, 
+  getExifDate, 
+  getVideoFileDuration,
+  fmtDate,
+  folderFor,
+  derivePublicIdFromUrl,
+  isVideoUrl
+} from './utils.js';
+
+export class PhotoManager {
+  constructor(config, storageManager) {
+    this.config = config;
+    this.storageManager = storageManager;
+    this.currentUser = null;
+    this.uploadDateOverride = null;
+  }
+
+  setCurrentUser(user) {
+    this.currentUser = user;
+  }
+
+  setUploadDateOverride(date) {
+    this.uploadDateOverride = date;
+  }
+
+  // 파일 업로드 처리
+  async handleFiles(files) {
+    if (!files || files.length === 0 || !this.currentUser) {
+      console.warn('파일이 없거나 사용자가 로그인하지 않음');
+      return;
+    }
+
+    console.log(`📁 ${files.length}개 파일 업로드 시작`);
+    
+    for (const file of files) {
+      try {
+        await this.uploadSingleFile(file);
+        // 활동 로그 기록
+        await this.logActivity('upload');
+      } catch (error) {
+        console.error(`파일 업로드 실패: ${file.name}`, error);
+        alert(`파일 업로드 실패: ${file.name}\n${error.message}`);
+      }
+    }
+    
+    // 업로드 완료 후 초기화
+    this.uploadDateOverride = null;
+  }
+
+  // 단일 파일 업로드
+  async uploadSingleFile(file) {
+    console.log(`📂 파일 처리 시작: ${file.name}`);
+    
+    let targetDate;
+    
+    if (this.uploadDateOverride) {
+      // 수동으로 지정된 날짜 사용
+      targetDate = this.uploadDateOverride;
+      console.log(`📅 수동 지정 날짜 사용: ${targetDate}`);
+    } else {
+      // EXIF에서 촬영일시 추출 시도
+      const exifDate = await getExifDate(file);
+      if (exifDate) {
+        targetDate = fmtDate(exifDate.toISOString());
+        console.log(`📸 EXIF 날짜 발견: ${targetDate} (파일: ${file.name})`);
+      } else {
+        // 파일 수정 날짜 사용
+        targetDate = fmtDate(new Date(file.lastModified).toISOString());
+        console.log(`📁 파일 수정일 사용: ${targetDate} (파일: ${file.name})`);
+      }
+    }
+    
+    // 파일 처리 및 검증
+    const processedFile = await this.processFile(file);
+    
+    // Cloudinary 업로드
+    const url = await this.uploadToCloudinary(processedFile, targetDate);
+    if (!url) {
+      throw new Error('Cloudinary 업로드 실패');
+    }
+    
+    // 동영상인 경우 길이 정보 추가
+    let duration = null;
+    if (isVidType(processedFile.type)) {
+      try {
+        duration = await getVideoFileDuration(processedFile);
+        console.log(`🎬 동영상 길이: ${duration}`);
+      } catch (e) {
+        console.log('동영상 길이 가져오기 실패:', e);
+        duration = '0:00';
+      }
+    }
+
+    // 사진 데이터 생성
+    const photoData = {
+      id: `${getBaseName(file.name)}_${Date.now()}`,
+      url: url,
+      uploadedAt: new Date().toISOString(),
+      dateGroup: targetDate, // 촬영일/지정일 사용
+      uploader: this.currentUser,
+      timestamp: Date.now(),
+      nameBase: getBaseName(file.name),
+      originalFileName: file.name,
+      fileSize: file.size,
+      reactions: {},
+      albums: [],
+      duration: duration // 동영상 길이 추가
+    };
+    
+    console.log(`💾 데이터 저장: ${photoData.dateGroup} - ${file.name}`);
+    
+    // 데이터베이스에 저장
+    await this.storageManager.savePhoto(photoData);
+    
+    return photoData;
+  }
+
+  // 파일 처리 (압축, 검증 등)
+  async processFile(file) {
+    // 파일 크기 검증
+    if (isVidType(file.type) && file.size > 100 * 1024 * 1024) {
+      throw new Error('동영상은 100MB 이하만 업로드 가능합니다.');
+    }
+
+    // 이미지 압축 (10MB 초과시)
+    if (isImgType(file.type) && file.size > 10 * 1024 * 1024) {
+      try {
+        const compressedFile = await this.compressImage(file);
+        console.log(`🗜️ 이미지 압축 완료: ${(file.size/1024/1024).toFixed(1)}MB → ${(compressedFile.size/1024/1024).toFixed(1)}MB`);
+        return compressedFile;
+      } catch (e) {
+        console.log('압축 실패, 원본 사용:', e);
+        return file;
+      }
+    }
+
+    return file;
+  }
+
+  // 이미지 압축
+  async compressImage(file) {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    const canvas = document.createElement('canvas');
+    const maxSize = 1500;
+    let { width, height } = img;
+
+    // 크기 조정
+    if (width > height && width > maxSize) {
+      height = Math.round(height * maxSize / width);
+      width = maxSize;
+    } else if (height >= width && height > maxSize) {
+      width = Math.round(width * maxSize / height);
+      height = maxSize;
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise(resolve => 
+      canvas.toBlob(resolve, 'image/jpeg', 0.9)
+    );
+
+    URL.revokeObjectURL(url);
+    
+    return new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+      type: 'image/jpeg'
+    });
+  }
+
+  // Cloudinary 업로드
+  async uploadToCloudinary(file, targetDate) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', this.config.cloudinary.uploadPreset);
+      formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
+
+      const endpoint = isVidType(file.type) ? 'video' : 'auto';
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${this.config.cloudinary.cloudName}/${endpoint}/upload`,
+        {
+          method: 'POST',
+          body: formData
+        }
+      );
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.secure_url) {
+        throw new Error(result.error?.message || `업로드 실패 (${response.status})`);
+      }
+
+      console.log(`☁️ Cloudinary 업로드 성공: ${result.secure_url}`);
+      return result.secure_url;
+    } catch (error) {
+      console.error('❌ Cloudinary 업로드 실패:', error);
+      throw error;
+    }
+  }
+
+  // 사진 삭제
+  async deletePhoto(photo) {
+    try {
+      // Cloudinary에서 삭제
+      const publicId = derivePublicIdFromUrl(photo.url);
+      if (publicId) {
+        await this.deleteFromCloudinary(publicId, isVideoUrl(photo.url) ? 'video' : 'image');
+      }
+
+      // 데이터베이스에서 삭제
+      await this.storageManager.deletePhoto(photo);
+      
+      console.log('사진 삭제 성공');
+    } catch (error) {
+      console.error('사진 삭제 오류:', error);
+      throw error;
+    }
+  }
+
+  // Cloudinary에서 삭제
+  async deleteFromCloudinary(publicId, resourceType = 'image') {
+    try {
+      await fetch('/.netlify/functions/delete-cloudinary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicId, resourceType })
+      });
+      console.log('Cloudinary에서 삭제 성공');
+    } catch (error) {
+      console.warn('Cloudinary 삭제 실패:', error);
+    }
+  }
+
+  // 사진 업데이트 (앨범, 반응 등)
+  async updatePhoto(photo, updates) {
+    try {
+      await this.storageManager.updatePhoto(photo, updates);
+      console.log('사진 업데이트 성공');
+    } catch (error) {
+      console.error('사진 업데이트 오류:', error);
+      throw error;
+    }
+  }
+
+  // 중복 사진 찾기
+  findDuplicatePhotos(photos) {
+    console.log('🔍 중복 사진 검사 시작...');
+    
+    const duplicates = [];
+    const photoMap = new Map();
+    
+    photos.forEach((photo) => {
+      // 파일명에서 확장자 제거한 베이스명 + 크기로 키 생성
+      const baseName = getBaseName(photo.originalFileName || photo.nameBase || '');
+      const fileSize = photo.fileSize || 0;
+      const key = `${baseName}_${fileSize}`;
+      
+      if (photoMap.has(key)) {
+        // 중복 발견!
+        const originalPhoto = photoMap.get(key);
+        duplicates.push({
+          key: key,
+          original: originalPhoto,
+          duplicate: photo,
+          fileName: baseName,
+          fileSize: fileSize
+        });
+      } else {
+        photoMap.set(key, photo);
+      }
+    });
+    
+    console.log(`🎯 중복 사진 ${duplicates.length}개 발견`);
+    return duplicates;
+  }
+
+  // 여러 사진 일괄 삭제
+  async deleteMultiplePhotos(photos) {
+    const results = [];
+    
+    for (const photo of photos) {
+      try {
+        await this.deletePhoto(photo);
+        results.push({ photo, success: true });
+      } catch (error) {
+        console.error('사진 삭제 실패:', photo, error);
+        results.push({ photo, success: false, error });
+      }
+    }
+    
+    return results;
+  }
+
+  // 활동 로그 기록
+  async logActivity(action = 'upload') {
+    if (!this.currentUser) return;
+    
+    const logEntry = {
+      user: this.currentUser,
+      action: action, // 'login', 'upload', 'comment', 'logout' 등
+      timestamp: new Date().toISOString(),
+      sessionId: this.getSessionId()
+    };
+    
+    try {
+      await this.storageManager.logActivity(logEntry);
+    } catch (error) {
+      console.warn('활동 로그 저장 실패:', error);
+    }
+  }
+
+  // 세션 ID 생성/반환
+  getSessionId() {
+    if (!this._sessionId) {
+      this._sessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    return this._sessionId;
+  }
+
+  // 동영상 길이 가져오기 (저장된 duration 사용)
+  getVideoDuration(photo) {
+    // 업로드할 때 저장된 길이 정보 사용
+    if (photo && photo.duration) {
+      return photo.duration;
+    }
+    
+    // 길이 정보가 없으면 기본값
+    return '0:00';
+  }
+
+  // 댓글 개수 가져오기
+  getCommentCount(photo) {
+    if (!photo) return 0;
+    
+    // Firebase 모드에서는 캐시된 정보 사용
+    if (this.storageManager.firebaseOn && photo.commentCount) {
+      return photo.commentCount;
+    }
+    
+    // 로컬 모드에서는 localStorage에서 직접 확인
+    try {
+      const key = 'comments_' + (photo.id || photo.public_id || photo.url);
+      const comments = JSON.parse(localStorage.getItem(key) || '[]');
+      return comments.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  // 배지 HTML 생성
+  generateBadges(photo) {
+    if (!photo) return '';
+    
+    const isVideo = isVideoUrl(photo.url);
+    const commentCount = this.getCommentCount(photo);
+    const hasComments = commentCount > 0;
+    
+    if (!isVideo && !hasComments) return '';
+    
+    let badges = '<div class="badges-container">';
+    
+    if (isVideo) {
+      const duration = this.getVideoDuration(photo);
+      badges += `<div class="video-duration-badge">${duration}</div>`;
+    }
+    
+    if (hasComments) {
+      badges += `<div class="comment-badge">
+        <span class="comment-icon">💬</span>
+        <span class="comment-count">${commentCount}</span>
+      </div>`;
+    }
+    
+    badges += '</div>';
+    
+    return badges;
+  }
+
+  // 파일 크기 포맷팅
+  formatFileSize(bytes) {
+    if (!bytes) return '알 수 없음';
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+  }
+}
