@@ -18,6 +18,7 @@ export class UIManager {
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos = new Set();
     this.currentGridDate = null;
+    this.pendingFiles = [];
 
     this.bindEvents();
   }
@@ -48,6 +49,9 @@ export class UIManager {
     
     fileInput?.addEventListener('change', (e) => this.handleFileUpload(e));
     calendarFileInput?.addEventListener('change', (e) => this.handleFileUpload(e));
+
+        $('#uploadCancel')?.addEventListener('click', () => this.hideUploadPreview());
+    $('#uploadConfirm')?.addEventListener('click', () => this.handleUploadConfirm());
 
     // 모달 관련
     $('#closeBtn')?.addEventListener('click', () => this.hideModal());
@@ -241,29 +245,77 @@ export class UIManager {
   bindDayGridEvents() {
     $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid());
   }
+     // 업로드 미리보기 표시
+  showUploadPreview(files) {
+    const overlay = $('#uploadPreviewOverlay');
+    const grid = $('#uploadPreviewGrid');
+    if (!overlay || !grid) {
+      // 미리보기 지원 안하면 즉시 업로드
+      this.app.photoManager.handleFiles(files);
+      this.app.renderCurrentView();
+      return;
+    }
 
-   // Fast Scroll + Date Bubble
-  setupFastScroll() {
-    const track = $('#fastScrollTrack');
-    const thumb = $('#fastScrollThumb');
-    const bubble = $('#dateBubble');
-    if (!track || !thumb || !bubble) return;
+    this.pendingFiles = files;
+    grid.innerHTML = '';
+
+    // 날짜 기준 정렬
+    files.sort((a, b) => a.lastModified - b.lastModified);
+
+    files.forEach((file, idx) => {
+      const url = URL.createObjectURL(file);
+      const date = fmtDate(new Date(file.lastModified).toISOString());
+      const div = document.createElement('div');
+      div.className = 'upload-item selected';
+      div.dataset.index = idx;
+      div.dataset.date = date;
+      div.innerHTML = `<img src="${url}" alt="preview"/>`;
+      div.addEventListener('click', () => div.classList.toggle('selected'));
+      grid.appendChild(div);
+    });
+
+    overlay.classList.add('show');
+    this.setupUploadFastScroll();
+  }
+
+  hideUploadPreview() {
+    const overlay = $('#uploadPreviewOverlay');
+    const grid = $('#uploadPreviewGrid');
+    overlay?.classList.remove('show');
+    if (grid) grid.innerHTML = '';
+    this.pendingFiles = [];
+  }
+
+  handleUploadConfirm() {
+    const selected = $$('#uploadPreviewGrid .upload-item.selected');
+    const files = Array.from(selected).map(el => this.pendingFiles[parseInt(el.dataset.index)]);
+    this.hideUploadPreview();
+    if (files.length > 0) {
+      this.app.photoManager.handleFiles(files).then(() => {
+        this.app.renderCurrentView();
+      });
+    }
+  }
+
+  setupUploadFastScroll() {
+    const container = $('#uploadPreviewContainer');
+    const track = $('#uploadFastScrollTrack');
+    const thumb = $('#uploadFastScrollThumb');
+    const bubble = $('#uploadDateBubble');
+    if (!container || !track || !thumb || !bubble) return;
 
     let dragging = false;
 
     const updateBubble = () => {
-      const days = $$('#timeline .day');
-      for (const day of days) {
-        const rect = day.getBoundingClientRect();
-        if (rect.bottom >= 0) {
-          const dateEl = day.querySelector('.day-actual-date');
-          if (dateEl) {
-            const text = dateEl.textContent.trim().split(' ')[0];
-            bubble.textContent = text;
-            bubble.classList.add('show');
-            clearTimeout(this._bubbleTimer);
-            this._bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 500);
-          }
+      const items = $$('#uploadPreviewGrid .upload-item');
+      const cRect = container.getBoundingClientRect();
+      for (const item of items) {
+        const rect = item.getBoundingClientRect();
+        if (rect.bottom >= cRect.top) {
+          bubble.textContent = item.dataset.date || '';
+          bubble.classList.add('show');
+          clearTimeout(this._bubbleTimer);
+          this._bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 500);
           break;
         }
       }
@@ -271,12 +323,13 @@ export class UIManager {
 
     const updateDrag = (clientY) => {
       const rect = track.getBoundingClientRect();
+      const cRect = container.getBoundingClientRect();
       let ratio = (clientY - rect.top) / rect.height;
       ratio = Math.max(0, Math.min(1, ratio));
-      const scrollTop = ratio * (document.body.scrollHeight - window.innerHeight);
-      window.scrollTo({ top: scrollTop, behavior: 'auto' });
+      const scrollTop = ratio * (container.scrollHeight - container.clientHeight);
+      container.scrollTo({ top: scrollTop, behavior: 'auto' });
       thumb.style.top = `${ratio * 100}%`;
-      bubble.style.top = `${clientY}px`;
+      bubble.style.top = `${clientY - cRect.top}px`;
       updateBubble();
     };
 
@@ -298,18 +351,17 @@ export class UIManager {
       dragging = false;
     };
 
-    track.addEventListener('mousedown', start);
-    track.addEventListener('touchstart', start, { passive: false });
-    document.addEventListener('mousemove', move);
-    document.addEventListener('touchmove', move, { passive: false });
-    document.addEventListener('mouseup', end);
-    document.addEventListener('touchend', end);
+    track.onmousedown = start;
+    track.ontouchstart = (e) => start(e);
+    document.onmousemove = move;
+    document.ontouchmove = (e) => move(e);
+    document.onmouseup = end;
+    document.ontouchend = end;
 
-    window.addEventListener('scroll', () => {
+    container.addEventListener('scroll', () => {
       if (!dragging) {
-        const ratio = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+        const ratio = container.scrollTop / (container.scrollHeight - container.clientHeight);
         thumb.style.top = `${ratio * 100}%`;
-        bubble.style.top = '50%';
       }
       updateBubble();
     });
@@ -320,9 +372,8 @@ export class UIManager {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    await this.app.photoManager.handleFiles(files);
-    event.target.value = ''; // 같은 파일 재선택 가능하도록
-    this.app.renderCurrentView();
+this.showUploadPreview(files);
+    event.target.value = '';
   }
 
   // 설정 표시/숨기기

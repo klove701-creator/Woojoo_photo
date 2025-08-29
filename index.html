@@ -208,11 +208,21 @@
   <input id="file" type="file" accept="image/*,video/*" multiple style="display:none" />
   <input id="calendarFile" type="file" accept="image/*,video/*" multiple style="display:none" />
 
-    <!-- Fast Scroll & Date Bubble -->
-  <div id="fastScrollTrack" class="fast-scroll-track">
-    <div id="fastScrollThumb" class="fast-scroll-thumb"></div>
+  <!-- Upload Preview Overlay -->
+  <div id="uploadPreviewOverlay" class="upload-preview-overlay" aria-hidden="true">
+    <div class="upload-preview-header">
+      <button id="uploadCancel" class="btn secondary">취소</button>
+      <div class="upload-preview-title">사진 선택</div>
+      <button id="uploadConfirm" class="btn">업로드</button>
+    </div>
+    <div id="uploadPreviewContainer" class="upload-preview-container">
+      <div id="uploadPreviewGrid" class="upload-preview-grid"></div>
+      <div id="uploadFastScrollTrack" class="fast-scroll-track">
+        <div id="uploadFastScrollThumb" class="fast-scroll-thumb"></div>
+      </div>
+      <div id="uploadDateBubble" class="date-bubble"></div>
+    </div>
   </div>
-  <div id="dateBubble" class="date-bubble"></div>
 
   <!-- Modal -->
   <div id="modal" class="modal" role="dialog" aria-modal="true">

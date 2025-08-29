@@ -1331,12 +1331,12 @@ input:focus, select:focus{
 
 /* Fast Scroll */
 .fast-scroll-track {
-  position: fixed;
-  top: 80px;
-  bottom: 20px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
   right: 4px;
   width: 16px;
-  z-index: 999;
+  z-index: 10;
 }
 
 .fast-scroll-thumb {
@@ -1350,7 +1350,7 @@ input:focus, select:focus{
 }
 
 .date-bubble {
-  position: fixed;
+  position: absolute;
   right: 40px;
   top: 50%;
   transform: translateY(-50%);
@@ -1361,10 +1361,65 @@ input:focus, select:focus{
   font-size: 14px;
   pointer-events: none;
   opacity: 0;
-  z-index: 1000;
+  z-index: 20;
   transition: opacity 0.2s;
 }
 
 .date-bubble.show {
   opacity: 1;
+}
+
+/* Upload Preview Overlay */
+.upload-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.upload-preview-overlay.show {
+  display: flex;
+}
+
+.upload-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.upload-preview-container {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.upload-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 4px;
+  padding: 4px 20px 4px 4px; /* space for scrollbar */
+}
+
+.upload-preview-grid .upload-item {
+  position: relative;
+  cursor: pointer;
+}
+
+.upload-preview-grid .upload-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.upload-preview-grid .upload-item.selected::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
 }
