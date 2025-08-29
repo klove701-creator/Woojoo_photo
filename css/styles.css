@@ -761,6 +761,7 @@ body{
   pointer-events:auto;
 }
 #modal.slide-right{ transform:translateX(100%); }
+#modal.no-transition{ transition:none; }
 
 .panel{
   background:#ffffff; 
@@ -1127,6 +1128,7 @@ input:focus, select:focus{
 }
 .day-grid-overlay.slide-left{ transform:translateX(-100%); }
 .day-grid-overlay.slide-right{ transform:translateX(100%); }
+.day-grid-overlay.no-transition{ transition:none; }
 .day-grid-header{
   display:flex;
   align-items:center;

@@ -840,11 +840,18 @@ export class UIManager {
       document.activeElement.blur();
     }
     if (!overlay) return;
-    overlay.classList.add(direction === 'forward' ? 'slide-left' : 'slide-right');
-    overlay.setAttribute('aria-hidden', 'true');
-    setTimeout(() => {
+    if (direction === 'forward') {
+      overlay.classList.add('slide-left');
+      overlay.setAttribute('aria-hidden', 'true');
+      setTimeout(() => {
+        overlay.classList.remove('show', 'slide-left', 'slide-right');
+      }, 300);
+    } else {
+      overlay.classList.add('no-transition');
       overlay.classList.remove('show', 'slide-left', 'slide-right');
-    }, 300);
+      overlay.setAttribute('aria-hidden', 'true');
+      requestAnimationFrame(() => overlay.classList.remove('no-transition'));
+    }
     this.exitDayGridMultiSelect();
   }
   bindDayGridCellEvents() {
@@ -878,7 +885,6 @@ export class UIManager {
           this.toggleDayGridSelection(photoId);
         } else {
           this.app.openPhotoById(photoId);
-          this.hideDayGrid('forward');
         }
       });
     });
@@ -989,16 +995,15 @@ export class UIManager {
   hideModal() {
     const modal = $('#modal');
     const video = $('#bigVideo');
-    
+
     try {
       video?.pause();
     } catch (e) {}
-    
+
     if (modal) {
-      modal.classList.add('slide-right');
-      setTimeout(() => {
-        modal.classList.remove('show', 'slide-right');
-      }, 300);
+      modal.classList.add('no-transition');
+      modal.classList.remove('show', 'slide-right');
+      requestAnimationFrame(() => modal.classList.remove('no-transition'));
     }
     document.body.style.overflow = 'auto';
   }
