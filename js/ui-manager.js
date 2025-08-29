@@ -873,12 +873,12 @@ export class UIManager {
       // 클릭 이벤트
       cell.addEventListener('click', (e) => {
         e.preventDefault();
-        
+
         if (this.dayGridMultiSelectMode) {
           this.toggleDayGridSelection(photoId);
         } else {
+          this.app.openPhotoById(photoId);
           this.hideDayGrid('forward');
-          setTimeout(() => this.app.openPhotoById(photoId), 300);
         }
       });
     });

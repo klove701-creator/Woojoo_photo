@@ -421,7 +421,7 @@ export class App {
           <div class="day-content">
             <div class="hero-tile open-grid" data-date="${date}" data-id="${heroId}">
               <img src="${preview(hero.url, 600, 600)}" alt="대표 이미지"/>
-              ${hero.url && hero.url.includes('/video/') ? '<span class="badge">🎬</span>' : ''}
+              ${this.photoManager.generateBadges(hero)}
             </div>
             <div class="tile-grid">
               ${tiles}

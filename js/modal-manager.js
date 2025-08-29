@@ -91,6 +91,7 @@ export class ModalManager {
 
     try {
       await this.app.storageManager.addComment(this.currentPhoto, commentData);
+      this.currentPhoto.commentCount = (this.currentPhoto.commentCount || 0) + 1;
       input.value = '';
       this.app.photoManager.logActivity('comment');
       this.loadComments(this.currentPhoto);
