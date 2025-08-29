@@ -1,8 +1,8 @@
-import { 
-  isImgType, 
-  isVidType, 
-  getBaseName, 
-  getExifDate, 
+import {
+  isImageFile,
+  isVideoFile,
+  getBaseName,
+  getExifDate,
   getVideoFileDuration,
   fmtDate,
   folderFor,
@@ -84,7 +84,7 @@ export class PhotoManager {
     
     // 동영상인 경우 길이 정보 추가
     let duration = null;
-    if (isVidType(processedFile.type)) {
+    if (isVideoFile(processedFile)) {
       try {
         duration = await getVideoFileDuration(processedFile);
         console.log(`🎬 동영상 길이: ${duration}`);
@@ -121,12 +121,12 @@ export class PhotoManager {
   // 파일 처리 (압축, 검증 등)
   async processFile(file) {
     // 파일 크기 검증
-    if (isVidType(file.type) && file.size > 100 * 1024 * 1024) {
+    if (isVideoFile(file) && file.size > 100 * 1024 * 1024) {
       throw new Error('동영상은 100MB 이하만 업로드 가능합니다.');
     }
 
     // 이미지 압축 (10MB 초과시)
-    if (isImgType(file.type) && file.size > 10 * 1024 * 1024) {
+    if (isImageFile(file) && file.size > 10 * 1024 * 1024) {
       try {
         const compressedFile = await this.compressImage(file);
         console.log(`🗜️ 이미지 압축 완료: ${(file.size/1024/1024).toFixed(1)}MB → ${(compressedFile.size/1024/1024).toFixed(1)}MB`);
@@ -190,7 +190,7 @@ export class PhotoManager {
       formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
 
       // Cloudinary에서 자동으로 이미지를 동영상으로 잘못 분류하는 문제 방지
-      const endpoint = isVidType(file.type) ? 'video' : 'image';
+      const endpoint = isVideoFile(file) ? 'video' : 'image';
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${this.config.cloudinary.cloudName}/${endpoint}/upload`,
         {

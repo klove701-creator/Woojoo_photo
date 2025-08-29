@@ -54,6 +54,39 @@ export const preview = (url, w, h) => isVideoUrl(url) ? videoThumb(url, w, h) : 
 export const isImgType = (t = '') => t.startsWith('image/');
 export const isVidType = (t = '') => t.startsWith('video/');
 
+// 파일 객체 검사
+export const isImageFile = (file) => {
+  if (!file) return false;
+  const type = file.type || '';
+  const name = file.name || '';
+  const ext = name.split('.').pop().toLowerCase();
+
+  // 이미지 확장자 우선 확인
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp'];
+  if (imageExts.includes(ext)) return true;
+
+  if (isImgType(type)) return true;
+  return false;
+};
+
+export const isVideoFile = (file) => {
+  if (!file) return false;
+  const type = file.type || '';
+  const name = file.name || '';
+  const ext = name.split('.').pop().toLowerCase();
+
+  // 이미지 확장자는 명시적으로 제외
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp'];
+  if (imageExts.includes(ext)) return false;
+  if (isImgType(type)) return false;
+
+  const videoExts = ['mp4', 'mov', 'webm', 'm4v'];
+  if (videoExts.includes(ext)) return true;
+  if (isVidType(type)) return true;
+
+  return false;
+};
+
 // 파일명 유틸리티
 export const getBaseName = (name = '') => name.replace(/\.[^.]+$/, '').toLowerCase();
 
@@ -107,7 +140,7 @@ export const getRandomImages = (photos, count) => {
 export const getExifDate = async (file) => {
   return new Promise((resolve) => {
     try {
-      if (!isImgType(file.type)) {
+      if (!isImageFile(file)) {
         resolve(null);
         return;
       }
