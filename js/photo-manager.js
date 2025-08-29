@@ -181,22 +181,34 @@ export class PhotoManager {
     });
   }
 
-  // Cloudinary 업로드
+  // photo-manager.js
 async uploadToCloudinary(file, targetDate) {
   try {
     const cloudName = this.config.cloudinary.cloudName;
 
-    // 파일 타입 판별
-    const mime = (file.type || '').toLowerCase();
-    const name = (file.name || '').toLowerCase();
-    const isVideo =
-      mime.startsWith('video/') ||
-      /\.(mp4|mov|m4v|avi|mkv|webm)$/i.test(name);
+    // 1) 파일명/확장자/MIME 기반 보수적 판별
+    const name = (file?.name || '').toLowerCase();
+    const mime = (file?.type || '').toLowerCase();
 
-    // ✅ 프리셋/엔드포인트 분기
+    const videoExt = /\.(mp4|mov|m4v|avi|mkv|webm)$/i.test(name);
+    const imageExt = /\.(jpg|jpeg|png|gif|webp|heic|heif|avif|bmp|tif|tiff)$/i.test(name);
+
+    const mimeVideo = mime.startsWith('video/');
+    const mimeImage = mime.startsWith('image/');
+
+    // ⚠️ 핵심: 애매하면 이미지로 처리(영상은 확실할 때만 true)
+    const isVideo = mimeVideo || (videoExt && !mimeImage);
+
+    // 2) 프리셋/엔드포인트 강제 분기 (프리셋이 곧 타입)
     const preset   = isVideo ? 'woojoo_fam' : 'woojoo_img';
-    const endpoint = isVideo ? 'video' : 'image';
+    const endpoint = isVideo ? 'video'      : 'image';
 
+    // 디버깅 로그 (한번만 확인해보세요)
+    console.log('[UPLOAD DECISION]', {
+      name, mime, videoExt, imageExt, mimeVideo, mimeImage, isVideo, preset, endpoint
+    });
+
+    // 3) 업로드
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', preset);
@@ -206,8 +218,8 @@ async uploadToCloudinary(file, targetDate) {
       `https://api.cloudinary.com/v1_1/${cloudName}/${endpoint}/upload`,
       { method: 'POST', body: formData }
     );
-
     const json = await res.json();
+
     if (!res.ok || !json.secure_url) {
       throw new Error(json?.error?.message || `업로드 실패 (${res.status})`);
     }
@@ -219,6 +231,7 @@ async uploadToCloudinary(file, targetDate) {
     throw error;
   }
 }
+
 
   // 사진 삭제
   async deletePhoto(photo) {
