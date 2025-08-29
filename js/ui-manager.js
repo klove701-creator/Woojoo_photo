@@ -117,8 +117,6 @@ export class UIManager {
     // Day Grid 이벤트
     this.bindDayGridEvents();
     
-    // Fast Scroll 초기화
-    this.setupFastScroll();
   }
 
   // 키보드 이벤트
