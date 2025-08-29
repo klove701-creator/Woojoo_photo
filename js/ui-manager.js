@@ -117,8 +117,8 @@ export class UIManager {
   // 키보드 이벤트
   bindKeyboardEvents() {
     window.addEventListener('keydown', (e) => {
-      if (!$('#modal').classList.contains('show')) return;
-      
+      const modal = $('#modal');
+      if (!modal || !modal.classList.contains('show')) return;
       if (e.key === 'ArrowRight') this.app.modalManager?.next();
       if (e.key === 'ArrowLeft') this.app.modalManager?.prev();
       if (e.key === 'Escape') this.hideModal();
@@ -469,8 +469,8 @@ export class UIManager {
         `<span class="album-item" data-album="${album}" data-i="${i}">${album} <span class="del" title="삭제">×</span></span>`
       ).join('');
       
-      // 삭제 이벤트 바인딩
-      $('#albumsList .album-item .del').forEach(el => {
+      // 삭제 이벤트 바인딩 (다중 선택자이므로 $$ 사용!)
+      $$('#albumsList .album-item .del').forEach(el => {
         el.onclick = async (e) => {
           e.stopPropagation();
           const i = Number(e.target.closest('.album-item').dataset.i);
@@ -490,7 +490,7 @@ export class UIManager {
         '<span class="album-item active" data-album="all">전체</span>' +
         albums.map(album => `<span class="album-item" data-album="${album}">${album}</span>`).join('');
       
-      $('#albumFilter .album-item').forEach(el => {
+      $$('#albumFilter .album-item').forEach(el => {
         el.onclick = () => this.app.filterByAlbum(el.dataset.album);
       });
     }
@@ -694,8 +694,8 @@ export class UIManager {
     };
     
     $('#confirmAlbumSelect').onclick = async () => {
-      const checkboxes = $('#albumCheckboxContainer input[type="checkbox"]:checked');
-      const selectedAlbums = Array.from(checkboxes).map(cb => cb.value);
+      const checkboxes = $$('#albumCheckboxContainer input[type="checkbox"]:checked');
+      const selectedAlbums = checkboxes.map(cb => cb.value);
       
       if (selectedAlbums.length === 0) {
         alert('앨범을 선택해주세요.');
@@ -777,7 +777,8 @@ export class UIManager {
     const grid = $('#dayGrid');
     if (!grid) return;
 
-    $('.cell', grid).forEach(cell => {
+    // 다중 요소 순회이므로 $$ 사용
+    $$('.cell', grid).forEach(cell => {
       const photoId = cell.dataset.photoId;
       let longPressTimer;
 
@@ -835,7 +836,8 @@ export class UIManager {
     grid?.classList.remove('multiselect-mode');
     header?.classList.remove('show');
     
-    $('.cell.selected', grid).forEach(cell => {
+    // 다중 요소 해제이므로 $$ 사용
+    $$('.cell.selected', grid).forEach(cell => {
       cell.classList.remove('selected');
     });
   }
