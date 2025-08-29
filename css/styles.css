@@ -1230,6 +1230,7 @@ input:focus, select:focus{
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center; /* Center all splash texts */
   z-index: 9999;
   opacity: 1;
   transition: opacity 0.8s ease;
@@ -1287,6 +1288,7 @@ input:focus, select:focus{
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   overflow: hidden;
+  margin: 0 auto; /* Center the gauge container */
 }
 
 .splash-progress-bar {
