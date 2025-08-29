@@ -71,20 +71,16 @@ export const isImageFile = (file) => {
 
 export const isVideoFile = (file) => {
   if (!file) return false;
-  const type = file.type || '';
+  const type = (file.type || '').toLowerCase();
+
+  // MIME 타입 우선 확인
+  if (type.startsWith('video/')) return true;
+  if (type.startsWith('image/')) return false;
+
   const name = file.name || '';
   const ext = name.split('.').pop().toLowerCase();
-
-  // 이미지 확장자는 명시적으로 제외
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'bmp'];
-  if (imageExts.includes(ext)) return false;
-  if (isImgType(type)) return false;
-
   const videoExts = ['mp4', 'mov', 'webm', 'm4v'];
-  if (videoExts.includes(ext)) return true;
-  if (isVidType(type)) return true;
-
-  return false;
+  return videoExts.includes(ext);
 };
 
 // 파일명 유틸리티
