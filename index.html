@@ -65,7 +65,16 @@
         <label>Cloudinary Upload Preset</label>
         <input id="cld-preset" type="text" placeholder="upload preset" style="width:100%" />
       </div>
-      
+
+      <!-- Cloudinary Usage Gauge -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">☁️ Cloudinary 사용량</div>
+        <div id="cloudinaryUsageBar" class="usage-bar">
+          <div id="cloudinaryUsageFill" class="usage-bar-fill"></div>
+        </div>
+        <div id="cloudinaryUsageText" class="muted" style="margin-top:4px; font-size:12px"></div>
+      </div>
+
       <!-- Theme Selector -->
       <div style="margin-top:16px">
         <div style="font-weight:700; margin:8px 0">🎨 테마 선택</div>

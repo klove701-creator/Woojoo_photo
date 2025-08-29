@@ -343,6 +343,7 @@ this.showUploadPreview(files);
   // 설정 표시/숨기기
   showSetup() {
     $('#setup')?.classList.remove('hidden');
+    this.app.loadCloudinaryUsage?.();
   }
   hideSetup() {
     $('#setup')?.classList.add('hidden');
