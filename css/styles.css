@@ -1328,3 +1328,43 @@ input:focus, select:focus{
     transform: translateY(0);
   }
 }
+
+/* Fast Scroll */
+.fast-scroll-track {
+  position: fixed;
+  top: 80px;
+  bottom: 20px;
+  right: 4px;
+  width: 16px;
+  z-index: 999;
+}
+
+.fast-scroll-thumb {
+  position: absolute;
+  right: 0;
+  width: 6px;
+  height: 40px;
+  background: var(--p);
+  border-radius: 3px;
+  opacity: 0.7;
+}
+
+.date-bubble {
+  position: fixed;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1000;
+  transition: opacity 0.2s;
+}
+
+.date-bubble.show {
+  opacity: 1;
+}

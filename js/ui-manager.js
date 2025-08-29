@@ -112,6 +112,9 @@ export class UIManager {
 
     // Day Grid 이벤트
     this.bindDayGridEvents();
+    
+    // Fast Scroll 초기화
+    this.setupFastScroll();
   }
 
   // 키보드 이벤트
@@ -237,6 +240,79 @@ export class UIManager {
   // Day Grid 이벤트
   bindDayGridEvents() {
     $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid());
+  }
+
+   // Fast Scroll + Date Bubble
+  setupFastScroll() {
+    const track = $('#fastScrollTrack');
+    const thumb = $('#fastScrollThumb');
+    const bubble = $('#dateBubble');
+    if (!track || !thumb || !bubble) return;
+
+    let dragging = false;
+
+    const updateBubble = () => {
+      const days = $$('#timeline .day');
+      for (const day of days) {
+        const rect = day.getBoundingClientRect();
+        if (rect.bottom >= 0) {
+          const dateEl = day.querySelector('.day-actual-date');
+          if (dateEl) {
+            const text = dateEl.textContent.trim().split(' ')[0];
+            bubble.textContent = text;
+            bubble.classList.add('show');
+            clearTimeout(this._bubbleTimer);
+            this._bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 500);
+          }
+          break;
+        }
+      }
+    };
+
+    const updateDrag = (clientY) => {
+      const rect = track.getBoundingClientRect();
+      let ratio = (clientY - rect.top) / rect.height;
+      ratio = Math.max(0, Math.min(1, ratio));
+      const scrollTop = ratio * (document.body.scrollHeight - window.innerHeight);
+      window.scrollTo({ top: scrollTop, behavior: 'auto' });
+      thumb.style.top = `${ratio * 100}%`;
+      bubble.style.top = `${clientY}px`;
+      updateBubble();
+    };
+
+    const start = (e) => {
+      dragging = true;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      updateDrag(clientY);
+      e.preventDefault();
+    };
+
+    const move = (e) => {
+      if (!dragging) return;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      updateDrag(clientY);
+      e.preventDefault();
+    };
+
+    const end = () => {
+      dragging = false;
+    };
+
+    track.addEventListener('mousedown', start);
+    track.addEventListener('touchstart', start, { passive: false });
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, { passive: false });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchend', end);
+
+    window.addEventListener('scroll', () => {
+      if (!dragging) {
+        const ratio = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+        thumb.style.top = `${ratio * 100}%`;
+        bubble.style.top = '50%';
+      }
+      updateBubble();
+    });
   }
 
   // 파일 업로드 처리
