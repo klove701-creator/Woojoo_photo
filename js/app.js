@@ -2,6 +2,7 @@ import { DEFAULTS, SETUP_DONE_KEY, fmtDate, shuffle, preview } from './utils.js'
 import { StorageManager } from './storage-manager.js';
 import { PhotoManager } from './photo-manager.js';
 import { UIManager } from './ui-manager.js';
+import { ModalManager } from './modal-manager.js';
 
 export class App {
   constructor() {
@@ -32,6 +33,7 @@ export class App {
     // 매니저들 초기화
     this.storageManager = new StorageManager(this.config);
     this.photoManager = new PhotoManager(this.config, this.storageManager);
+    this.modalManager = new ModalManager(this);
     
     // 사용자 복원
     this.currentUser = localStorage.getItem('currentUser') || null;

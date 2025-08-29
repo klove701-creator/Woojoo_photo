@@ -4,7 +4,7 @@ import './ui-manager.js';
 import './photo-manager.js';
 import './storage-manager.js';
 import './app.js';
-
+import './modal-manager.js';
 
 // PWA 서비스 워커 등록
 if ('serviceWorker' in navigator) {
