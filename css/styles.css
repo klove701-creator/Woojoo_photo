@@ -447,9 +447,9 @@ body{
 
 /* Calendar */
 .cal{
-  background:var(--card); 
-  border-radius:20px; 
-  padding:20px;
+  background:var(--card);
+  border-radius:20px;
+  padding:10px;
   box-shadow:var(--shadow);
   border:1px solid var(--border);
   margin-top:20px;
@@ -473,15 +473,15 @@ body{
   color:var(--p);
 }
 .grid{
-  display:grid; 
-  grid-template-columns:repeat(7,1fr); 
-  gap:8px;
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:4px;
 }
 .cell{
-  position:relative; 
-  aspect-ratio:1/1; 
-  border-radius:12px; 
-  overflow:hidden; 
+  position:relative;
+  aspect-ratio:1/1;
+  border-radius:12px;
+  overflow:hidden;
   background:#f8fafc;
   transition:all 0.2s ease;
   display:flex;
@@ -489,7 +489,7 @@ body{
   justify-content:center;
   flex-direction:column;
   cursor:pointer;
-  border:2px solid transparent;
+  border:1px solid transparent;
 }
 .cell.has-photo{background:#e5e7eb;}
 .cell.has-photo:hover{transform:scale(1.05);}

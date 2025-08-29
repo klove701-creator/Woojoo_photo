@@ -25,7 +25,7 @@ export class UIManager {
     // 설정 관련
     $('#save')?.addEventListener('click', () => this.app.saveConfig(true));
     $('#skip')?.addEventListener('click', () => this.app.saveConfig(false));
-    $('#openSetup')?.addEventListener('click', () => this.showSetup());
+    $('#openSetup')?.addEventListener('click', () => this.toggleSetup());
     // 인증 관련
     $('#logout')?.addEventListener('click', () => this.app.logout());
     // 탭 관련
@@ -351,6 +351,15 @@ export class UIManager {
   }
   hideSetup() {
     $('#setup')?.classList.add('hidden');
+  }
+  toggleSetup() {
+    const setup = $('#setup');
+    if (!setup) return;
+    if (setup.classList.contains('hidden')) {
+      this.showSetup();
+    } else {
+      this.hideSetup();
+    }
   }
   // 탭 전환
   showTab(tab) {
