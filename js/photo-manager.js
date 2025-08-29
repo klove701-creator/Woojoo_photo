@@ -182,36 +182,43 @@ export class PhotoManager {
   }
 
   // Cloudinary 업로드
-  async uploadToCloudinary(file, targetDate) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', this.config.cloudinary.uploadPreset);
-      formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
+async uploadToCloudinary(file, targetDate) {
+  try {
+    const cloudName = this.config.cloudinary.cloudName;
 
-      // Cloudinary에서 자동으로 이미지를 동영상으로 잘못 분류하는 문제 방지
-      const endpoint = isVideoFile(file) ? 'video' : 'image';
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${this.config.cloudinary.cloudName}/${endpoint}/upload`,
-        {
-          method: 'POST',
-          body: formData
-        }
-      );
+    // 파일 타입 판별
+    const mime = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+    const isVideo =
+      mime.startsWith('video/') ||
+      /\.(mp4|mov|m4v|avi|mkv|webm)$/i.test(name);
 
-      const result = await response.json();
-      
-      if (!response.ok || !result.secure_url) {
-        throw new Error(result.error?.message || `업로드 실패 (${response.status})`);
-      }
+    // ✅ 프리셋/엔드포인트 분기
+    const preset   = isVideo ? 'woojoo_fam' : 'woojoo_img';
+    const endpoint = isVideo ? 'video' : 'image';
 
-      console.log(`☁️ Cloudinary 업로드 성공: ${result.secure_url}`);
-      return result.secure_url;
-    } catch (error) {
-      console.error('❌ Cloudinary 업로드 실패:', error);
-      throw error;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', preset);
+    formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/${endpoint}/upload`,
+      { method: 'POST', body: formData }
+    );
+
+    const json = await res.json();
+    if (!res.ok || !json.secure_url) {
+      throw new Error(json?.error?.message || `업로드 실패 (${res.status})`);
     }
+
+    console.log(`☁️ Cloudinary 업로드 성공: ${json.secure_url}`);
+    return json.secure_url;
+  } catch (error) {
+    console.error('❌ Cloudinary 업로드 실패:', error);
+    throw error;
   }
+}
 
   // 사진 삭제
   async deletePhoto(photo) {
