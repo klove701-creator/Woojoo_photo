@@ -9,10 +9,11 @@ import {
   orderBy, 
   deleteDoc, 
   doc, 
-  getDocs, 
-  updateDoc, 
-  getDoc, 
-  setDoc 
+  getDocs,
+  updateDoc,
+  getDoc,
+  setDoc,
+  increment
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 export class StorageManager {
@@ -59,17 +60,29 @@ export class StorageManager {
   // Firebase에서 사진 로드
   loadPhotosFromFirebase(callback) {
     const q = query(collection(this.db, 'family-photos'), orderBy('timestamp', 'desc'));
-    
+
     // 기존 구독 해제
     const unsub = this.unsubscribers.get('photos');
     if (unsub) unsub();
-    
+
     // 새로운 구독 설정
-    const unsubscriber = onSnapshot(q, (snapshot) => {
-      const photos = [];
-      snapshot.forEach((doc) => {
-        photos.push({ docId: doc.id, ...doc.data() });
-      });
+    const unsubscriber = onSnapshot(q, async (snapshot) => {
+      const photos = await Promise.all(snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data();
+        let commentCount = data.commentCount;
+
+        if (commentCount === undefined) {
+          try {
+            const commentsSnap = await getDocs(collection(this.db, 'family-photos', docSnap.id, 'comments'));
+            commentCount = commentsSnap.size;
+          } catch (e) {
+            commentCount = 0;
+          }
+        }
+
+        return { docId: docSnap.id, ...data, commentCount };
+      }));
+
       callback(photos, null);
     }, (error) => {
       console.error('Firebase 사진 로드 오류:', error);
@@ -273,9 +286,17 @@ export class StorageManager {
   async addCommentToFirebase(photo, commentData) {
     try {
       const docRef = await addDoc(
-        collection(this.db, 'family-photos', photo.docId, 'comments'), 
+        collection(this.db, 'family-photos', photo.docId, 'comments'),
         commentData
       );
+      // 댓글 수 증가
+      try {
+        await updateDoc(doc(this.db, 'family-photos', photo.docId), {
+          commentCount: increment(1)
+        });
+      } catch (e) {
+        console.warn('댓글 수 업데이트 실패:', e);
+      }
       console.log('Firebase에 댓글 추가 성공');
       return docRef.id;
     } catch (error) {

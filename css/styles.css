@@ -364,6 +364,7 @@ body{
   flex-direction: column;
   gap: 6px;
   z-index: 5;
+  pointer-events: none;
 }
 
 .video-duration-badge {

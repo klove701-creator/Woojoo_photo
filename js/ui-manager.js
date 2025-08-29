@@ -337,7 +337,11 @@ export class UIManager {
   async handleFileUpload(event) {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
-this.showUploadPreview(files);
+
+    // 선택 즉시 업로드 처리
+    await this.app.photoManager.handleFiles(files);
+    this.app.renderCurrentView();
+
     event.target.value = '';
   }
   // 설정 표시/숨기기

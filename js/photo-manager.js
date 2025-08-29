@@ -189,7 +189,8 @@ export class PhotoManager {
       formData.append('upload_preset', this.config.cloudinary.uploadPreset);
       formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
 
-      const endpoint = isVidType(file.type) ? 'video' : 'auto';
+      // Cloudinary에서 자동으로 이미지를 동영상으로 잘못 분류하는 문제 방지
+      const endpoint = isVidType(file.type) ? 'video' : 'image';
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${this.config.cloudinary.cloudName}/${endpoint}/upload`,
         {
@@ -345,13 +346,13 @@ export class PhotoManager {
   // 댓글 개수 가져오기
   getCommentCount(photo) {
     if (!photo) return 0;
-    
-    // Firebase 모드에서는 캐시된 정보 사용
-    if (this.storageManager.firebaseOn && photo.commentCount) {
+
+    // Firebase 여부와 관계없이 photo 객체에 저장된 값이 있으면 사용
+    if (typeof photo.commentCount === 'number') {
       return photo.commentCount;
     }
-    
-    // 로컬 모드에서는 localStorage에서 직접 확인
+
+    // 로컬 저장소에서 직접 확인
     try {
       const key = 'comments_' + (photo.id || photo.public_id || photo.url);
       const comments = JSON.parse(localStorage.getItem(key) || '[]');
