@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🌟 우주성장일지 v4.1</title>
+
+  <!-- PWA / Splash tuning -->
+  <meta name="theme-color" content="#667eea" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Gmarket Sans 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@300;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Splash Screen -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-images" id="splashImages"></div>
+    <div style="position: relative; z-index: 10; text-align: center;">
+      <div class="splash-logo">🌟 우주성장일지</div>
+      <div class="splash-loading">추억을 불러오는 중...</div>
+      <div class="splash-progress">
+        <div class="splash-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="top">
+    <div class="nav-container">
+      <div class="nav-row-1">
+        <div class="brand">🌟 우주성장일지 v4.1</div>
+        <button id="openSetup" class="settings-btn" title="설정">⚙️</button>
+      </div>
+      <div class="tabs" id="tabsContainer">
+        <div class="tab active" data-tab="timeline">타임라인</div>
+        <div class="tab" data-tab="calendar">캘린더</div>
+        <div class="tab" data-tab="albums">앨범</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- Setup Panel -->
+    <div id="setup" class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <strong>🔧 앱 설정</strong><span class="muted">자동입력됨</span>
+      </div>
+      <div style="margin-top:16px">
+        <label>Firebase Project ID</label>
+        <input id="fb-project" type="text" placeholder="Project ID" style="width:100%;margin-bottom:8px" />
+        <label>Firebase API Key</label>
+        <input id="fb-api" type="text" placeholder="API Key" style="width:100%;margin-bottom:8px" />
+        <label>Cloudinary Cloud Name</label>
+        <input id="cld-name" type="text" placeholder="cloud name" style="width:100%;margin-bottom:8px" />
+        <label>Cloudinary Upload Preset</label>
+        <input id="cld-preset" type="text" placeholder="upload preset" style="width:100%" />
+      </div>
+      
+      <!-- Theme Selector -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">🎨 테마 선택</div>
+        <div class="theme-selector">
+          <button class="theme-btn active" data-theme="default">기본</button>
+          <button class="theme-btn" data-theme="newborn">신생아 (노랑)</button>
+          <button class="theme-btn" data-theme="infant">영아 (초록)</button>
+          <button class="theme-btn" data-theme="toddler">유아 (분홍)</button>
+        </div>
+      </div>
+      
+      <!-- D-DAY 기준 설정 -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">🎯 D-DAY 기준일 설정</div>
+        <input id="ddayInput" type="date" style="width:100%" />
+      </div>
+      
+      <!-- Members -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">👨‍👩‍👧 가족 구성 관리</div>
+        <div id="membersArea" class="chips"></div>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <input id="memberInput" type="text" placeholder="예: 👴 할아버지" style="flex:1" />
+          <button id="memberAdd" class="btn secondary">추가</button>
+          <button id="membersReset" class="btn secondary">기본으로</button>
+        </div>
+        <div style="margin-top:8px;">
+          <button id="familyActivityBtn" class="btn secondary" style="width:100%;">👥 가족 활동 기록 보기</button>
+        </div>
+      </div>
+      
+      <!-- Albums -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">🗂️ 앨범 관리</div>
+        <div id="albumsList" class="album-list"></div>
+        <div style="display:flex; gap:8px; margin-top:8px">
+          <input id="albumInput" type="text" placeholder="예: 100일, 첫걸음마" style="flex:1" />
+          <button id="albumAdd" class="btn secondary">추가</button>
+        </div>
+      </div>
+      
+      <!-- Duplicate Management -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">🗂️ 중복 사진 관리</div>
+        <button id="duplicateManagerBtn2" class="btn secondary">중복 사진 찾기</button>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+          같은 파일명과 크기를 가진 중복 사진을 찾아 정리해요
+        </div>
+      </div>
+      
+      <!-- Activity Log -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">👥 가족 활동 로그</div>
+        <button id="activityLogBtn" class="btn secondary">활동 기록 보기</button>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+          누가 언제 접속했는지 확인할 수 있어요
+        </div>
+      </div>
+      
+      <div style="margin-top:16px; display:flex; gap:8px">
+        <button id="save" class="btn">설정 저장(Firebase 사용)</button>
+        <button id="skip" class="btn secondary">Firebase 없이 시작</button>
+      </div>
+      <div id="msg" class="muted" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Login -->
+    <div id="login" class="card hidden" style="text-align:center">
+      <div style="margin-bottom:10px"><strong>👨‍👩‍👧‍👦 가족 구성원 선택</strong></div>
+      <div id="loginChips" class="chips" style="justify-content:center"></div>
+    </div>
+
+    <!-- App -->
+    <div id="app" class="hidden">
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center">
+        <div><strong>안녕, <span id="me">-</span></strong></div>
+        <div style="display:flex; gap:6px">
+          <button id="logout" class="btn secondary">로그아웃</button>
+        </div>
+      </div>
+
+      <!-- Memory of the Day -->
+      <div id="memoryDay" class="memory-day hidden">
+        <h3>📅 작년 오늘의 추억</h3>
+        <div id="memoryGrid" class="memory-grid"></div>
+      </div>
+
+      <!-- Tab Content Container -->
+      <div class="tab-container" id="tabContainer">
+        <!-- Timeline -->
+        <div id="timeline" class="tab-content active"></div>
+
+        <!-- Calendar -->
+        <div id="calendar" class="tab-content">
+          <div class="cal">
+            <div class="calhead">
+              <button id="prevM" class="btn secondary">◀</button>
+              <div id="calTitle" class="cal-title-clickable"></div>
+              <button id="nextM" class="btn secondary">▶</button>
+            </div>
+            <div class="grid" id="calGrid"></div>
+          </div>
+        </div>
+
+        <!-- Albums -->
+        <div id="albums" class="tab-content">
+          <div class="album-manager">
+            <div class="album-manager-header">
+              <div style="font-weight:700">🗂️ 앨범별 보기</div>
+              <div style="display:flex; gap:8px;">
+                <button id="duplicateManagerBtn" class="btn secondary">🗂️ 중복정리</button>
+                <button id="multiselectBtn" class="btn secondary">다중선택</button>
+              </div>
+            </div>
+          </div>
+          <div id="albumFilter" class="album-list"></div>
+          <div id="albumPhotos" style="margin-top:16px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date/Month/Year Picker Modal -->
+  <div id="datePickerModal" class="date-picker-modal">
+    <div class="date-picker-panel">
+      <div class="date-picker-header" id="datePickerHeader">월 선택</div>
+      <div id="datePickerContent"></div>
+    </div>
+  </div>
+
+  <!-- Multi-select Bottom Bar -->
+  <div id="multiselectBottomBar" class="multiselect-bottom-bar">
+    <button id="moveToAlbumBtn" class="btn">📁 앨범 이동</button>
+    <button id="deleteSelectedBtn" class="btn" style="background:#ef4444">🗑️ 삭제</button>
+    <button id="cancelMultiselectBtn" class="btn secondary">❌ 취소</button>
+  </div>
+
+  <!-- FAB -->
+  <button id="fab" class="fab" aria-label="업로드">＋</button>
+  <input id="file" type="file" accept="image/*,video/*" multiple style="display:none" />
+  <input id="calendarFile" type="file" accept="image/*,video/*" multiple style="display:none" />
+
+  <!-- Upload Preview Overlay -->
+  <div id="uploadPreviewOverlay" class="upload-preview-overlay" aria-hidden="true" tabindex="-1">
+    <div class="upload-preview-header">
+      <button id="uploadCancel" class="btn secondary">취소</button>
+      <div class="upload-preview-title">사진 선택</div>
+      <button id="uploadConfirm" class="btn">업로드</button>
+    </div>
+    <div id="uploadPreviewContainer" class="upload-preview-container">
+      <div id="uploadPreviewGrid" class="upload-preview-grid"></div>
+      <div id="uploadFastScrollTrack" class="fast-scroll-track">
+        <div id="uploadFastScrollThumb" class="fast-scroll-thumb"></div>
+      </div>
+      <div id="uploadDateBubble" class="date-bubble"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="viewer" id="modalViewer">
+        <img id="big" src="" alt="미리보기" />
+        <video id="bigVideo" controls playsinline></video>
+        
+        <div class="modal-actions">
+          <button id="albumBtn" class="action-btn" title="앨범에 추가">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-7 5h4"/>
+            </svg>
+          </button>
+          <a id="dlBtn" class="action-btn" download target="_blank" rel="noopener" title="다운로드">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+            </svg>
+          </a>
+          <button id="delBtn" class="action-btn delete" title="삭제">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+          <button id="closeBtn" class="action-btn" title="닫기">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        
+        <button id="prevBtn" class="navbtn prev" aria-label="이전">‹</button>
+        <button id="nextBtn" class="navbtn next" aria-label="다음">›</button>
+      </div>
+      
+      <!-- Emoji Reactions -->
+      <div class="reactions">
+        <button class="reaction" data-emoji="❤️">
+          <span>❤️</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <button class="reaction" data-emoji="😍">
+          <span>😍</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <button class="reaction" data-emoji="🥰">
+          <span>🥰</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <button class="reaction" data-emoji="😊">
+          <span>😊</span>
+          <span class="reaction-count">0</span>
+        </button>
+        <button class="reaction" data-emoji="👍">
+          <span>👍</span>
+          <span class="reaction-count">0</span>
+        </button>
+      </div>
+      
+      <div id="strip" class="strip" aria-label="썸네일 목록"></div>
+      
+      <div class="comments">
+        <div id="commentList" class="comment-list" aria-live="polite"></div>
+        <div class="comment-input">
+          <input id="commentInput" type="text" placeholder="댓글을 입력하세요" maxlength="300" />
+          <button id="commentSend" class="btn">전송</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day Grid Overlay -->
+  <div id="dayGridOverlay" class="day-grid-overlay" aria-hidden="true" tabindex="-1">
+    <div class="day-grid-header">
+      <button id="dayGridBack" class="day-grid-close" aria-label="뒤로">‹ 뒤로</button>
+      <div class="day-grid-title" id="dayGridTitle">-</div>
+      <div id="dayGridCount"></div>
+    </div>
+    
+    <!-- Multi-select Header -->
+    <div id="dayGridMultiselectHeader" class="day-grid-multiselect-header">
+      <div class="day-grid-multiselect-info" id="dayGridMultiselectInfo">0개 선택됨</div>
+      <div class="day-grid-multiselect-actions">
+        <button id="dayGridMoveToAlbum" class="day-grid-multiselect-btn">📁 앨범 이동</button>
+        <button id="dayGridDeleteSelected" class="day-grid-multiselect-btn">🗑️ 삭제</button>
+        <button id="dayGridCancelMultiselect" class="day-grid-multiselect-btn">✖ 취소</button>
+      </div>
+    </div>
+    
+    <div class="day-grid-content">
+      <div class="day-grid" id="dayGrid"></div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="duplicateModal" class="modal">
+    <div class="panel" style="max-width: 800px;">
+      <div id="duplicateContent"></div>
+    </div>
+  </div>
+
+  <div id="activityLogModal" class="modal">
+    <div class="panel" style="max-width: 600px;">
+      <div id="activityLogContent"></div>
+    </div>
+  </div>
+
+  <div id="stat" class="mutebar" title="클릭하여 온라인/오프라인 전환">offline</div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -40,14 +40,6 @@ export class ModalManager {
     this.updateReactionsUI(photo);
 
     modal.classList.add('show');
-    // animate modal panel in from right for forward nav
-    const panel = modal.querySelector('.panel');
-    if (panel) {
-      panel.classList.remove('slide-in-left','slide-in-right','slide-out-left','slide-out-right');
-      void panel.offsetWidth; // reflow
-      panel.classList.add('slide-in-right');
-      panel.addEventListener('animationend', () => panel.classList.remove('slide-in-right'), { once: true });
-    }
     document.body.style.overflow = 'hidden';
   }
 
