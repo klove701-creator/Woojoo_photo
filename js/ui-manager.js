@@ -273,13 +273,19 @@ export class UIManager {
     });
 
     overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.focus();
     this.setupUploadFastScroll();
   }
 
   hideUploadPreview() {
     const overlay = $('#uploadPreviewOverlay');
     const grid = $('#uploadPreviewGrid');
+    if (overlay && overlay.contains(document.activeElement)) {
+    document.activeElement.blur();
+    }
     overlay?.classList.remove('show');
+    overlay?.setAttribute('aria-hidden', 'true');
     if (grid) grid.innerHTML = '';
     this.pendingFiles = [];
   }
@@ -889,12 +895,17 @@ this.showUploadPreview(files);
     this.bindDayGridCellEvents();
     
     overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.focus();
   }
 
   hideDayGrid() {
     const overlay = $('#dayGridOverlay');
+    if (overlay && overlay.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
     overlay?.classList.remove('show');
-    
+    overlay?.setAttribute('aria-hidden', 'true');  
     this.exitDayGridMultiSelect();
   }
 
