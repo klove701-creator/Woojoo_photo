@@ -39,6 +39,7 @@ export class ModalManager {
     this.loadComments(photo);
     this.updateReactionsUI(photo);
 
+    modal.classList.remove('slide-right');
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
   }

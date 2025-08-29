@@ -212,7 +212,7 @@ export class UIManager {
   }
   // Day Grid 이벤트
   bindDayGridEvents() {
-    $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid());
+    $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid('back'));
     $('#dayGridMoveToAlbum')?.addEventListener('click', () => this.moveDayGridSelectionToAlbum());
     $('#dayGridDeleteSelected')?.addEventListener('click', () => this.deleteDayGridSelectedPhotos());
     $('#dayGridCancelMultiselect')?.addEventListener('click', () => this.exitDayGridMultiSelect());
@@ -821,20 +821,25 @@ this.showUploadPreview(files);
       </div>`;
     }).join('');
     
-    // 이벤트 바인딩
-    this.bindDayGridCellEvents();
-    
-    overlay.classList.add('show');
-    overlay.setAttribute('aria-hidden', 'false');
-    overlay.focus();
+      // 이벤트 바인딩
+      this.bindDayGridCellEvents();
+
+      overlay.classList.remove('slide-left', 'slide-right');
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+      overlay.focus();
   }
-  hideDayGrid() {
+  hideDayGrid(direction = 'back') {
     const overlay = $('#dayGridOverlay');
     if (overlay && overlay.contains(document.activeElement)) {
       document.activeElement.blur();
     }
-    overlay?.classList.remove('show');
-    overlay?.setAttribute('aria-hidden', 'true');  
+    if (!overlay) return;
+    overlay.classList.add(direction === 'forward' ? 'slide-left' : 'slide-right');
+    overlay.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+      overlay.classList.remove('show', 'slide-left', 'slide-right');
+    }, 300);
     this.exitDayGridMultiSelect();
   }
   bindDayGridCellEvents() {
@@ -867,8 +872,8 @@ this.showUploadPreview(files);
         if (this.dayGridMultiSelectMode) {
           this.toggleDayGridSelection(photoId);
         } else {
-          this.hideDayGrid();
-          setTimeout(() => this.app.openPhotoById(photoId), 50);
+          this.hideDayGrid('forward');
+          setTimeout(() => this.app.openPhotoById(photoId), 300);
         }
       });
     });
@@ -969,7 +974,7 @@ this.showUploadPreview(files);
     try {
       await this.app.deleteMultiplePhotos(Array.from(this.dayGridSelectedPhotos));
       alert(`${this.dayGridSelectedPhotos.size}개 사진이 삭제되었습니다.`);
-      this.hideDayGrid();
+      this.hideDayGrid('back');
       this.app.load();
     } catch (e) {
       alert('사진 삭제 중 오류가 발생했습니다: ' + e.message);
@@ -984,7 +989,12 @@ this.showUploadPreview(files);
       video?.pause();
     } catch (e) {}
     
-    modal?.classList.remove('show');
+    if (modal) {
+      modal.classList.add('slide-right');
+      setTimeout(() => {
+        modal.classList.remove('show', 'slide-right');
+      }, 300);
+    }
     document.body.style.overflow = 'auto';
   }
   // 중복 사진 관리

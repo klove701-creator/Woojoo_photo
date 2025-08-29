@@ -733,6 +733,19 @@ body{
 .modal.show{display:flex; animation:fadeIn 0.2s ease;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
+#modal{
+  display:flex;
+  transform:translateX(100%);
+  transition:transform 0.3s ease;
+  pointer-events:none;
+}
+#modal.show{
+  animation:none;
+  transform:translateX(0);
+  pointer-events:auto;
+}
+#modal.slide-right{ transform:translateX(100%); }
+
 .panel{
   background:#ffffff; 
   width:min(960px,95vw); 
@@ -1086,10 +1099,18 @@ input:focus, select:focus{
   inset:0;
   background:var(--bg);
   z-index: 999;
-  display:none;
+  display:flex;
   flex-direction:column;
+  transform:translateX(100%);
+  transition:transform 0.3s ease;
+  pointer-events:none;
 }
-.day-grid-overlay.show{ display:flex; }
+.day-grid-overlay.show{
+  transform:translateX(0);
+  pointer-events:auto;
+}
+.day-grid-overlay.slide-left{ transform:translateX(-100%); }
+.day-grid-overlay.slide-right{ transform:translateX(100%); }
 .day-grid-header{
   display:flex;
   align-items:center;
