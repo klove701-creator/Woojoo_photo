@@ -200,13 +200,26 @@ export class ModalManager {
   }
 
   updateReactionsUI(photo) {
-    const buttons = $$('.reaction');
-    buttons.forEach(btn => {
-      const emoji = btn.dataset.emoji;
-      const users = photo.reactions?.[emoji] || [];
-      const countEl = btn.querySelector('.reaction-count');
-      if (countEl) countEl.textContent = users.length;
-      btn.classList.toggle('active', users.includes(this.app.currentUser));
-    });
+  const buttons = $$('.reaction');
+
+  // 공통 헬퍼: 어떤 형태든 배열로 변환
+  const toArray = (val) => {
+    if (Array.isArray(val)) return val;
+    if (!val) return [];
+    if (typeof val === 'object') return Object.keys(val); // {uid:true} → ['uid', ...]
+    if (typeof val === 'string') return val.split(',').map(s => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  buttons.forEach(btn => {
+    const emoji = btn.dataset.emoji;
+    const usersRaw = photo.reactions?.[emoji];  // 배열일 수도, 객체일 수도
+    const userList = toArray(usersRaw);
+
+    const countEl = btn.querySelector('.reaction-count');
+    if (countEl) countEl.textContent = userList.length;
+
+    btn.classList.toggle('active', userList.includes(this.app.currentUser));
+  });
   }
 }
