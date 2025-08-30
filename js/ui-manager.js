@@ -17,6 +17,7 @@ export class UIManager {
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos = new Set();
     this.currentGridDate = null;
+    this.dayGridPhotos = [];
     this.pendingFiles = [];
     this.bindEvents();
   }
@@ -818,6 +819,7 @@ export class UIManager {
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos.clear();
     const dayPhotos = this.app.getPhotosByDate(date);
+    this.dayGridPhotos = dayPhotos;
     
     if (title) title.textContent = date;
     if (count) count.textContent = `${dayPhotos.length}장`;
@@ -893,7 +895,7 @@ export class UIManager {
         if (this.dayGridMultiSelectMode) {
           this.toggleDayGridSelection(photoId);
         } else {
-          this.app.openPhotoById(photoId);
+          this.app.openPhotoById(photoId, this.dayGridPhotos);
         }
       });
     });

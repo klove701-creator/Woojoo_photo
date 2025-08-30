@@ -6,11 +6,13 @@ export class ModalManager {
     this.currentIndex = -1;
     this.commentUnsub = null;
     this.currentPhoto = null;
+    this.photos = [];
   }
 
-  showModal(photo) {
+  showModal(photo, photos = this.app.photos) {
     if (!photo) return;
-    this.currentIndex = this.app.photos.indexOf(photo);
+    this.photos = photos;
+    this.currentIndex = this.photos.indexOf(photo);
     if (this.currentIndex < 0) this.currentIndex = 0;
     this.currentPhoto = photo;
 
@@ -46,13 +48,13 @@ export class ModalManager {
 
   prev() {
     if (this.currentIndex > 0) {
-      this.showModal(this.app.photos[this.currentIndex - 1]);
+      this.showModal(this.photos[this.currentIndex - 1], this.photos);
     }
   }
 
   next() {
-    if (this.currentIndex < this.app.photos.length - 1) {
-      this.showModal(this.app.photos[this.currentIndex + 1]);
+    if (this.currentIndex < this.photos.length - 1) {
+      this.showModal(this.photos[this.currentIndex + 1], this.photos);
     }
   }
 
@@ -62,15 +64,21 @@ export class ModalManager {
 
     try {
       await this.app.photoManager.deletePhoto(this.currentPhoto);
-      this.app.photos.splice(this.currentIndex, 1);
+
+      const globalIndex = this.app.photos.indexOf(this.currentPhoto);
+      if (globalIndex >= 0) this.app.photos.splice(globalIndex, 1);
+
+      const ctxIndex = this.photos.indexOf(this.currentPhoto);
+      if (ctxIndex >= 0) this.photos.splice(ctxIndex, 1);
+
       this.app.renderCurrentView();
 
-      if (this.app.photos.length === 0) {
+      if (this.photos.length === 0) {
         this.app.uiManager.hideModal();
-      } else if (this.currentIndex >= this.app.photos.length) {
-        this.showModal(this.app.photos[this.app.photos.length - 1]);
+      } else if (this.currentIndex >= this.photos.length) {
+        this.showModal(this.photos[this.photos.length - 1], this.photos);
       } else {
-        this.showModal(this.app.photos[this.currentIndex]);
+        this.showModal(this.photos[this.currentIndex], this.photos);
       }
     } catch (e) {
       alert('삭제 중 오류가 발생했습니다.');
@@ -187,14 +195,14 @@ export class ModalManager {
   renderStrip() {
     const strip = $('#strip');
     if (!strip) return;
-    strip.innerHTML = this.app.photos.map((p, idx) => `
+    strip.innerHTML = this.photos.map((p, idx) => `
       <img src="${preview(p.url, 150, 150)}" data-index="${idx}" class="${idx === this.currentIndex ? 'active' : ''}"/>
     `).join('');
     $$('#strip img').forEach(img => {
       img.addEventListener('click', (e) => {
         const index = parseInt(e.currentTarget.dataset.index, 10);
-        const photo = this.app.photos[index];
-        if (photo) this.showModal(photo);
+        const photo = this.photos[index];
+        if (photo) this.showModal(photo, this.photos);
       });
     });
   }

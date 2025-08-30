@@ -621,10 +621,10 @@ export class App {
   }
 
   // 사진 열기
-  openPhotoById(id) {
-    const photo = this.photos.find(p => (p.id || p.public_id) === id || p.url === id);
+  openPhotoById(id, photoList = this.photos) {
+    const photo = photoList.find(p => (p.id || p.public_id) === id || p.url === id);
     if (photo && this.modalManager) {
-      this.modalManager.showModal(photo);
+      this.modalManager.showModal(photo, photoList);
     }
   }
 
