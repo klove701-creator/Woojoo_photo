@@ -37,12 +37,12 @@ export class ModalManager {
         ghostIsVideo = prevElVisible === bigVideo;
         // Ensure ghost has correct media source
         if (ghostIsVideo) {
-          try { ghost.pause(); } catch(_) {}
+          try { ghost.pause(); } catch (_) {}
           ghost.removeAttribute('controls');
           ghost.playsInline = true;
           ghost.muted = true;
           ghost.src = prevElVisible.src;
-          try { ghost.load(); } catch(_) {}
+          try { ghost.load(); } catch (_) {}
         } else {
           ghost.src = prevElVisible.src;
         }
@@ -118,4 +118,127 @@ export class ModalManager {
 
   next() {
     if (this.currentIndex < this.photos.length - 1) {
-      this
+      this.showModal(this.photos[this.currentIndex + 1], this.photos, 'left');
+    }
+  }
+
+  hideModal() {
+    const modal = $('#modal');
+    if (!modal) return;
+    modal.classList.add('slide-right');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+    if (this.commentUnsub) {
+      this.commentUnsub();
+      this.commentUnsub = null;
+    }
+  }
+
+  renderStrip() {
+    const strip = $('#strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+    this.photos.forEach((p, idx) => {
+      const img = document.createElement('img');
+      img.src = preview(p.url, 200, 200);
+      if (idx === this.currentIndex) img.classList.add('active');
+      img.addEventListener('click', () => {
+        const direction = idx > this.currentIndex ? 'left' : 'right';
+        this.showModal(p, this.photos, direction);
+      });
+      strip.appendChild(img);
+    });
+  }
+
+  loadComments(photo) {
+    const list = $('#commentList');
+    if (!list) return;
+    list.innerHTML = '';
+    if (this.commentUnsub) {
+      this.commentUnsub();
+      this.commentUnsub = null;
+    }
+    this.commentUnsub = this.app.storageManager.loadComments(photo, (comments) => {
+      list.innerHTML = '';
+      comments.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'comment-item';
+        const userSpan = document.createElement('strong');
+        userSpan.textContent = c.user + ': ';
+        const textSpan = document.createElement('span');
+        textSpan.textContent = c.text;
+        div.appendChild(userSpan);
+        div.appendChild(textSpan);
+        list.appendChild(div);
+      });
+    });
+  }
+
+  submitComment() {
+    const input = $('#commentInput');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text || !this.currentPhoto) return;
+    if (!this.app.currentUser) {
+      alert('사용자를 선택하세요');
+      return;
+    }
+    const comment = {
+      user: this.app.currentUser,
+      text,
+      createdAt: Date.now()
+    };
+    this.app.storageManager.addComment(this.currentPhoto, comment);
+    input.value = '';
+  }
+
+  async deleteCurrent() {
+    if (!this.currentPhoto) return;
+    if (!confirm('이 사진을 삭제하시겠습니까?')) return;
+    try {
+      await this.app.photoManager.deletePhoto(this.currentPhoto);
+      this.photos.splice(this.currentIndex, 1);
+      this.hideModal();
+      this.app.load();
+    } catch (e) {
+      alert('삭제 중 오류가 발생했습니다: ' + e.message);
+    }
+  }
+
+  showAlbumSelector() {
+    if (!this.currentPhoto) return;
+    const input = prompt('앨범 이름을 입력하세요 (쉼표로 구분)');
+    if (!input) return;
+    const names = input.split(',').map(n => n.trim()).filter(Boolean);
+    if (!names.length) return;
+    const photoId = this.currentPhoto.id || this.currentPhoto.public_id || this.currentPhoto.url;
+    this.app.movePhotosToAlbums([photoId], names);
+    alert('앨범에 추가되었습니다.');
+  }
+
+  toggleReaction(emoji) {
+    if (!this.currentPhoto || !this.app.currentUser) return;
+    if (!this.currentPhoto.reactions) this.currentPhoto.reactions = {};
+    const users = this.currentPhoto.reactions[emoji] || [];
+    const idx = users.indexOf(this.app.currentUser);
+    if (idx >= 0) {
+      users.splice(idx, 1);
+    } else {
+      users.push(this.app.currentUser);
+    }
+    this.currentPhoto.reactions[emoji] = users;
+    this.updateReactionsUI(this.currentPhoto);
+    this.app.photoManager.updatePhoto(this.currentPhoto, { reactions: this.currentPhoto.reactions });
+  }
+
+  updateReactionsUI(photo) {
+    const buttons = $$('.reaction');
+    buttons.forEach(btn => {
+      const emoji = btn.dataset.emoji;
+      const users = photo.reactions?.[emoji] || [];
+      const countSpan = btn.querySelector('.reaction-count');
+      if (countSpan) countSpan.textContent = users.length;
+      btn.classList.toggle('active', users.includes(this.app.currentUser));
+    });
+  }
+}
