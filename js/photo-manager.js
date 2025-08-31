@@ -1,8 +1,8 @@
-import { 
-  isImgType, 
-  isVidType, 
-  getBaseName, 
-  getExifDate, 
+import {
+  isImageFile,
+  isVideoFile,
+  getBaseName,
+  getExifDate,
   getVideoFileDuration,
   fmtDate,
   folderFor,
@@ -82,7 +82,7 @@ export class PhotoManager {
     
     // 동영상인 경우 길이 정보 추가
     let duration = null;
-    if (isVidType(processedFile.type)) {
+    if (isVideoFile(processedFile)) {
       try {
         duration = await getVideoFileDuration(processedFile);
         console.log(`🎬 동영상 길이: ${duration}`);
@@ -119,12 +119,12 @@ export class PhotoManager {
   // 파일 처리 (압축, 검증 등)
   async processFile(file) {
     // 파일 크기 검증
-    if (isVidType(file.type) && file.size > 100 * 1024 * 1024) {
+    if (isVideoFile(file) && file.size > 100 * 1024 * 1024) {
       throw new Error('동영상은 100MB 이하만 업로드 가능합니다.');
     }
 
     // 이미지 압축 (10MB 초과시)
-    if (isImgType(file.type) && file.size > 10 * 1024 * 1024) {
+    if (isImageFile(file) && file.size > 10 * 1024 * 1024) {
       try {
         const compressedFile = await this.compressImage(file);
         console.log(`🗜️ 이미지 압축 완료: ${(file.size/1024/1024).toFixed(1)}MB → ${(compressedFile.size/1024/1024).toFixed(1)}MB`);
@@ -179,36 +179,57 @@ export class PhotoManager {
     });
   }
 
-  // Cloudinary 업로드
-  async uploadToCloudinary(file, targetDate) {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', this.config.cloudinary.uploadPreset);
-      formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
+  // photo-manager.js
+async uploadToCloudinary(file, targetDate) {
+  try {
+    const cloudName = this.config.cloudinary.cloudName;
 
-      const endpoint = isVidType(file.type) ? 'video' : 'auto';
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${this.config.cloudinary.cloudName}/${endpoint}/upload`,
-        {
-          method: 'POST',
-          body: formData
-        }
-      );
+    // 1) 파일명/확장자/MIME 기반 보수적 판별
+    const name = (file?.name || '').toLowerCase();
+    const mime = (file?.type || '').toLowerCase();
 
-      const result = await response.json();
-      
-      if (!response.ok || !result.secure_url) {
-        throw new Error(result.error?.message || `업로드 실패 (${response.status})`);
-      }
+    const videoExt = /\.(mp4|mov|m4v|avi|mkv|webm)$/i.test(name);
+    const imageExt = /\.(jpg|jpeg|png|gif|webp|heic|heif|avif|bmp|tif|tiff)$/i.test(name);
 
-      console.log(`☁️ Cloudinary 업로드 성공: ${result.secure_url}`);
-      return result.secure_url;
-    } catch (error) {
-      console.error('❌ Cloudinary 업로드 실패:', error);
-      throw error;
+    const mimeVideo = mime.startsWith('video/');
+    const mimeImage = mime.startsWith('image/');
+
+    // ⚠️ 핵심: 애매하면 이미지로 처리(영상은 확실할 때만 true)
+    const isVideo = mimeVideo || (videoExt && !mimeImage);
+
+    // 2) 프리셋/엔드포인트 강제 분기 (프리셋이 곧 타입)
+    const preset   = isVideo ? 'woojoo_fam' : 'woojoo_img';
+    const endpoint = isVideo ? 'video'      : 'image';
+
+    // 디버깅 로그 (한번만 확인해보세요)
+    console.log('[UPLOAD DECISION]', {
+      name, mime, videoExt, imageExt, mimeVideo, mimeImage, isVideo, preset, endpoint
+    });
+
+    // 3) 업로드
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', preset);
+    formData.append('folder', folderFor(targetDate + 'T00:00:00.000Z'));
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/${endpoint}/upload`,
+      { method: 'POST', body: formData }
+    );
+    const json = await res.json();
+
+    if (!res.ok || !json.secure_url) {
+      throw new Error(json?.error?.message || `업로드 실패 (${res.status})`);
     }
+
+    console.log(`☁️ Cloudinary 업로드 성공: ${json.secure_url}`);
+    return json.secure_url;
+  } catch (error) {
+    console.error('❌ Cloudinary 업로드 실패:', error);
+    throw error;
   }
+}
+
 
   // 사진 삭제
   async deletePhoto(photo) {
@@ -286,13 +307,13 @@ export class PhotoManager {
   // 댓글 개수 가져오기
   getCommentCount(photo) {
     if (!photo) return 0;
-    
-    // Firebase 모드에서는 캐시된 정보 사용
-    if (this.storageManager.firebaseOn && photo.commentCount) {
+
+    // Firebase 여부와 관계없이 photo 객체에 저장된 값이 있으면 사용
+    if (typeof photo.commentCount === 'number') {
       return photo.commentCount;
     }
-    
-    // 로컬 모드에서는 localStorage에서 직접 확인
+
+    // 로컬 저장소에서 직접 확인
     try {
       const key = 'comments_' + (photo.id || photo.public_id || photo.url);
       const comments = JSON.parse(localStorage.getItem(key) || '[]');

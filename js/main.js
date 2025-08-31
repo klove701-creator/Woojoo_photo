@@ -1,12 +1,17 @@
 import { App } from './app.js';
+import './utils.js';
+import './ui-manager.js';
+import './photo-manager.js';
+import './storage-manager.js';
+import './app.js';
 
 
 // PWA 서비스 워커 등록
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {
-      console.log('서비스 워커 등록 실패');
-    });
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+      .then(() => console.log('서비스 워커 등록 성공'))
+      .catch(err => console.error('서비스 워커 등록 실패', err));
   });
 }
 
