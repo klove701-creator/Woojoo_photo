@@ -2,6 +2,7 @@ import { DEFAULTS, SETUP_DONE_KEY, fmtDate, shuffle, preview } from './utils.js'
 import { StorageManager } from './storage-manager.js';
 import { PhotoManager } from './photo-manager.js';
 import { UIManager } from './ui-manager.js';
+import { ModalManager } from './modal-manager.js';
 
 export class App {
   constructor() {
@@ -32,6 +33,7 @@ export class App {
     // 매니저들 초기화
     this.storageManager = new StorageManager(this.config);
     this.photoManager = new PhotoManager(this.config, this.storageManager);
+    this.modalManager = new ModalManager(this);
     
     // 사용자 복원
     this.currentUser = localStorage.getItem('currentUser') || null;
@@ -211,6 +213,39 @@ export class App {
     this.checkAppState();
   }
 
+  // Cloudinary 사용량 로드
+  async loadCloudinaryUsage() {
+    try {
+      const res = await fetch('/.netlify/functions/cloudinary-usage');
+      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      const total = data.limit || 0;
+      const used = data.usage || 0;
+      const percent = total ? (used / total) * 100 : 0;
+
+      const fill = document.getElementById('cloudinaryUsageFill');
+      const text = document.getElementById('cloudinaryUsageText');
+
+      const format = (bytes) => {
+        const units = ['B','KB','MB','GB','TB'];
+        let n = bytes;
+        let i = 0;
+        while (n >= 1024 && i < units.length - 1) {
+          n /= 1024;
+          i++;
+        }
+        return `${n.toFixed(1)}${units[i]}`;
+      };
+
+      if (fill) fill.style.width = `${percent.toFixed(1)}%`;
+      if (text) text.textContent = `${format(used)} / ${format(total)} (${percent.toFixed(1)}%)`;
+    } catch (e) {
+      console.warn('Cloudinary 사용량 불러오기 실패:', e);
+      const text = document.getElementById('cloudinaryUsageText');
+      if (text) text.textContent = '사용량 정보를 가져오지 못했습니다';
+    }
+  }
+
   // 데이터 로드
   async load() {
     this.loading = true;
@@ -384,7 +419,7 @@ export class App {
           <div class="day-content">
             <div class="hero-tile open-grid" data-date="${date}" data-id="${heroId}">
               <img src="${preview(hero.url, 600, 600)}" alt="대표 이미지"/>
-              ${hero.url && hero.url.includes('/video/') ? '<span class="badge">🎬</span>' : ''}
+              ${this.photoManager.generateBadges(hero)}
             </div>
             <div class="tile-grid">
               ${tiles}
@@ -584,10 +619,10 @@ export class App {
   }
 
   // 사진 열기
-  openPhotoById(id) {
-    const photo = this.photos.find(p => (p.id || p.public_id) === id || p.url === id);
+  openPhotoById(id, photoList = this.photos) {
+    const photo = photoList.find(p => (p.id || p.public_id) === id || p.url === id);
     if (photo && this.modalManager) {
-      this.modalManager.showModal(photo);
+      this.modalManager.showModal(photo, photoList);
     }
   }
 
