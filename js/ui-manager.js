@@ -120,10 +120,10 @@ export class UIManager {
   // 스와이프 이벤트
   bindSwipeEvents() {
     // 모달 스와이프
-    const modalViewer = $('#modalViewer');
-    modalViewer?.addEventListener('touchstart', (e) => this.handleTouchStart(e, 'modal'), {passive: true});
-    modalViewer?.addEventListener('touchmove', (e) => this.handleTouchMove(e, 'modal'), {passive: true});
-    modalViewer?.addEventListener('touchend', (e) => this.handleTouchEnd(e, 'modal'), {passive: true});
+    const modal = $('#modal');
+    modal?.addEventListener('touchstart', (e) => this.handleTouchStart(e, 'modal'), {passive: true});
+    modal?.addEventListener('touchmove', (e) => this.handleTouchMove(e, 'modal'), {passive: true});
+    modal?.addEventListener('touchend', (e) => this.handleTouchEnd(e, 'modal'), {passive: true});
     
     // 탭 스와이프
     const tabContainer = $('#tabContainer');
