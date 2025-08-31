@@ -1,4 +1,5 @@
 import { $, $$, getRandomImages, shuffle, fmtDate, preview } from './utils.js';
+
 export class UIManager {
   constructor(app) {
     this.app = app;
@@ -17,22 +18,25 @@ export class UIManager {
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos = new Set();
     this.currentGridDate = null;
-    this.dayGridPhotos = [];
-    this.pendingFiles = [];
+
     this.bindEvents();
   }
+
   // 이벤트 바인딩
   bindEvents() {
     // 설정 관련
     $('#save')?.addEventListener('click', () => this.app.saveConfig(true));
     $('#skip')?.addEventListener('click', () => this.app.saveConfig(false));
-    $('#openSetup')?.addEventListener('click', () => this.toggleSetup());
+    $('#openSetup')?.addEventListener('click', () => this.showSetup());
+
     // 인증 관련
     $('#logout')?.addEventListener('click', () => this.app.logout());
+
     // 탭 관련
     $$('.tab').forEach(tab => {
       tab.addEventListener('click', (e) => this.showTab(e.target.dataset.tab));
     });
+
     // 업로드 관련
     const fileInput = $('#file');
     const calendarFileInput = $('#calendarFile');
@@ -44,73 +48,75 @@ export class UIManager {
     
     fileInput?.addEventListener('change', (e) => this.handleFileUpload(e));
     calendarFileInput?.addEventListener('change', (e) => this.handleFileUpload(e));
-        $('#uploadCancel')?.addEventListener('click', () => this.hideUploadPreview());
-    $('#uploadConfirm')?.addEventListener('click', () => this.handleUploadConfirm());
+
     // 모달 관련
     $('#closeBtn')?.addEventListener('click', () => this.hideModal());
     $('#prevBtn')?.addEventListener('click', () => this.app.modalManager?.prev());
     $('#nextBtn')?.addEventListener('click', () => this.app.modalManager?.next());
     $('#delBtn')?.addEventListener('click', () => this.app.modalManager?.deleteCurrent());
+
     // 캘린더 관련
     $('#prevM')?.addEventListener('click', () => this.navigateMonth(-1));
     $('#nextM')?.addEventListener('click', () => this.navigateMonth(1));
     $('#calTitle')?.addEventListener('click', () => this.showYearPicker());
+
     // 댓글 관련
     $('#commentSend')?.addEventListener('click', () => this.app.modalManager?.submitComment());
     $('#commentInput')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.app.modalManager?.submitComment();
     });
+
     // 멤버 관리
     $('#memberAdd')?.addEventListener('click', () => this.addMember());
     $('#membersReset')?.addEventListener('click', () => this.resetMembers());
+
     // 앨범 관리
     $('#albumAdd')?.addEventListener('click', () => this.addAlbum());
     $('#albumBtn')?.addEventListener('click', () => this.app.modalManager?.showAlbumSelector());
+
     // 이모지 반응
     $$('.reaction').forEach(btn => {
       btn.addEventListener('click', (e) => this.app.modalManager?.toggleReaction(e.currentTarget.dataset.emoji));
     });
+
     // 테마 선택
     $$('.theme-btn').forEach(btn => {
       btn.addEventListener('click', (e) => this.applyTheme(e.target.dataset.theme));
     });
+
     // 다중선택 관련
     $('#multiselectBtn')?.addEventListener('click', () => this.toggleMultiSelectMode());
     $('#moveToAlbumBtn')?.addEventListener('click', () => this.moveSelectedToAlbum());
     $('#deleteSelectedBtn')?.addEventListener('click', () => this.deleteSelectedPhotos());
     $('#cancelMultiselectBtn')?.addEventListener('click', () => this.exitMultiSelectMode());
 
-    // 중복 사진 관리
-    $('#duplicateManagerBtn')?.addEventListener('click', () => this.showDuplicateManager());
-    $('#duplicateManagerBtn2')?.addEventListener('click', () => this.showDuplicateManager());
-
-    // 활동 로그
-    $('#activityLogBtn')?.addEventListener('click', () => this.showActivityLogs());
-    $('#familyActivityBtn')?.addEventListener('click', () => this.showActivityLogs());
-
     // 상태바
     $('#stat')?.addEventListener('click', () => this.app.toggleOnlineMode());
+
     // 키보드 이벤트
     this.bindKeyboardEvents();
     
     // 스와이프 이벤트
     this.bindSwipeEvents();
+
     // 캘린더 클릭 이벤트
     this.bindCalendarClickEvents();
+
     // Day Grid 이벤트
     this.bindDayGridEvents();
-    
   }
+
   // 키보드 이벤트
   bindKeyboardEvents() {
     window.addEventListener('keydown', (e) => {
-      const modal = $('#modal');
-      if (!modal || !modal.classList.contains('show')) return;
+      if (!$('#modal').classList.contains('show')) return;
+      
       if (e.key === 'ArrowRight') this.app.modalManager?.next();
       if (e.key === 'ArrowLeft') this.app.modalManager?.prev();
       if (e.key === 'Escape') this.hideModal();
     });
   }
+
   // 스와이프 이벤트
   bindSwipeEvents() {
     // 모달 스와이프
@@ -131,14 +137,17 @@ export class UIManager {
     cal?.addEventListener('touchmove', (e) => this.handleTouchMove(e, 'calendar'), {passive: true});
     cal?.addEventListener('touchend', (e) => this.handleTouchEnd(e, 'calendar'), {passive: true});
   }
+
   handleTouchStart(e, type) {
     this.swipeStartX = e.touches[0].clientX;
     this.swipeStartY = e.touches[0].clientY;
     this.isSwipeProcessing = false;
   }
+
   handleTouchMove(e, type) {
     if (this.isSwipeProcessing) return;
   }
+
   handleTouchEnd(e, type) {
     if (this.isSwipeProcessing) return;
     
@@ -177,6 +186,7 @@ export class UIManager {
       setTimeout(() => { this.isSwipeProcessing = false; }, 300);
     }
   }
+
   // 캘린더 클릭 이벤트
   bindCalendarClickEvents() {
     // 모달 전체에 이벤트 위임
@@ -204,6 +214,7 @@ export class UIManager {
         const month = parseInt(monthText) - 1; // 0부터 시작
         this.selectMonth(month);
       }
+
       // 캘린더 셀 업로드 클릭
       if (e.target.classList.contains('upload-icon') || e.target.closest('.cell.empty')) {
         const cell = e.target.closest('.cell');
@@ -214,154 +225,34 @@ export class UIManager {
       }
     });
   }
+
   // Day Grid 이벤트
   bindDayGridEvents() {
     $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid());
+    $('#dayGridMoveToAlbum')?.addEventListener('click', () => this.moveDayGridSelectedToAlbum());
+    $('#dayGridDeleteSelected')?.addEventListener('click', () => this.deleteDayGridSelectedPhotos());
+    $('#dayGridCancelMultiselect')?.addEventListener('click', () => this.exitDayGridMultiSelect());
   }
-     // 업로드 미리보기 표시
-  showUploadPreview(files) {
-    const overlay = $('#uploadPreviewOverlay');
-    const grid = $('#uploadPreviewGrid');
-    if (!overlay || !grid) {
-      // 미리보기 지원 안하면 즉시 업로드
-      this.app.photoManager.handleFiles(files);
-      this.app.renderCurrentView();
-      return;
-    }
-    this.pendingFiles = files;
-    grid.innerHTML = '';
-    // 날짜 기준 정렬
-    files.sort((a, b) => a.lastModified - b.lastModified);
-    files.forEach((file, idx) => {
-      const url = URL.createObjectURL(file);
-      const date = fmtDate(new Date(file.lastModified).toISOString());
-      const div = document.createElement('div');
-      div.className = 'upload-item selected';
-      div.dataset.index = idx;
-      div.dataset.date = date;
-      div.innerHTML = `<img src="${url}" alt="preview"/>`;
-      div.addEventListener('click', () => div.classList.toggle('selected'));
-      grid.appendChild(div);
-    });
-    overlay.classList.add('show');
-    overlay.setAttribute('aria-hidden', 'false');
-    overlay.focus();
-    this.setupUploadFastScroll();
-  }
-  hideUploadPreview() {
-    const overlay = $('#uploadPreviewOverlay');
-    const grid = $('#uploadPreviewGrid');
-    if (overlay && overlay.contains(document.activeElement)) {
-    document.activeElement.blur();
-    }
-    overlay?.classList.remove('show');
-    overlay?.setAttribute('aria-hidden', 'true');
-    if (grid) grid.innerHTML = '';
-    this.pendingFiles = [];
-  }
-  handleUploadConfirm() {
-    const selected = $$('#uploadPreviewGrid .upload-item.selected');
-    const files = Array.from(selected).map(el => this.pendingFiles[parseInt(el.dataset.index)]);
-    this.hideUploadPreview();
-    if (files.length > 0) {
-      this.app.photoManager.handleFiles(files).then(() => {
-        this.app.renderCurrentView();
-      });
-    }
-  }
-  setupUploadFastScroll() {
-    const container = $('#uploadPreviewContainer');
-    const track = $('#uploadFastScrollTrack');
-    const thumb = $('#uploadFastScrollThumb');
-    const bubble = $('#uploadDateBubble');
-    if (!container || !track || !thumb || !bubble) return;
-    let dragging = false;
-    const updateBubble = () => {
-      const items = $$('#uploadPreviewGrid .upload-item');
-      const cRect = container.getBoundingClientRect();
-      for (const item of items) {
-        const rect = item.getBoundingClientRect();
-        if (rect.bottom >= cRect.top) {
-          bubble.textContent = item.dataset.date || '';
-          bubble.classList.add('show');
-          clearTimeout(this._bubbleTimer);
-          this._bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 500);
-          break;
-        }
-      }
-    };
-    const updateDrag = (clientY) => {
-      const rect = track.getBoundingClientRect();
-      const cRect = container.getBoundingClientRect();
-      let ratio = (clientY - rect.top) / rect.height;
-      ratio = Math.max(0, Math.min(1, ratio));
-      const scrollTop = ratio * (container.scrollHeight - container.clientHeight);
-      container.scrollTo({ top: scrollTop, behavior: 'auto' });
-      thumb.style.top = `${ratio * 100}%`;
-      bubble.style.top = `${clientY - cRect.top}px`;
-      updateBubble();
-    };
-    const start = (e) => {
-      dragging = true;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      updateDrag(clientY);
-      e.preventDefault();
-    };
-    const move = (e) => {
-      if (!dragging) return;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      updateDrag(clientY);
-      e.preventDefault();
-    };
-    const end = () => {
-      dragging = false;
-    };
-    track.onmousedown = start;
-    track.ontouchstart = (e) => start(e);
-    document.onmousemove = move;
-    document.ontouchmove = (e) => move(e);
-    document.onmouseup = end;
-    document.ontouchend = end;
-    const onScrollLike = () => {
-      if (!dragging) {
-        const ratio = container.scrollTop / (container.scrollHeight - container.clientHeight);
-        thumb.style.top = `${ratio * 100}%`;
-      }
-      updateBubble();
-    };
-    container.addEventListener('scroll', onScrollLike);
-    container.addEventListener('touchstart', onScrollLike, {passive: true});
-    container.addEventListener('touchmove', onScrollLike, {passive: true});
-    container.addEventListener('wheel', onScrollLike);
-  }
+
   // 파일 업로드 처리
   async handleFileUpload(event) {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    // 선택 즉시 업로드 처리
     await this.app.photoManager.handleFiles(files);
+    event.target.value = ''; // 같은 파일 재선택 가능하도록
     this.app.renderCurrentView();
-
-    event.target.value = '';
   }
+
   // 설정 표시/숨기기
   showSetup() {
     $('#setup')?.classList.remove('hidden');
-    this.app.loadCloudinaryUsage?.();
   }
+
   hideSetup() {
     $('#setup')?.classList.add('hidden');
   }
-  toggleSetup() {
-    const setup = $('#setup');
-    if (!setup) return;
-    if (setup.classList.contains('hidden')) {
-      this.showSetup();
-    } else {
-      this.hideSetup();
-    }
-  }
+
   // 탭 전환
   showTab(tab) {
     const tabs = ['timeline', 'calendar', 'albums'];
@@ -398,6 +289,7 @@ export class UIManager {
     if (tab === 'calendar') this.app.renderCalendar();
     if (tab === 'albums') this.app.renderAlbumPhotos();
   }
+
   // 테마 적용
   applyTheme(theme) {
     document.body.dataset.theme = theme;
@@ -408,6 +300,7 @@ export class UIManager {
     this.app.config.theme = theme;
     this.app.saveAppConfig();
   }
+
   // 스플래시 화면 관리
   showSplashScreen() {
     const splashScreen = $('#splashScreen');
@@ -446,6 +339,7 @@ export class UIManager {
       this.hideSplashScreen();
     }, 3000);
   }
+
   animateSplashImages() {
     const images = $$('.splash-image');
     if (images.length === 0) return;
@@ -463,6 +357,7 @@ export class UIManager {
       image.style.transform = 'scale(1)';
     }, 500);
   }
+
   hideSplashScreen() {
     const splashScreen = $('#splashScreen');
     const appContent = $('.top');
@@ -479,6 +374,7 @@ export class UIManager {
       splashScreen.style.display = 'none';
     }, 800);
   }
+
   // 상태 표시
   setStatus(status) {
     const statusEl = $('#stat');
@@ -487,6 +383,7 @@ export class UIManager {
       statusEl.title = `상태: ${status} (클릭하여 전환)`;
     }
   }
+
   showMessage(text, isSuccess = true) {
     const msgEl = $('#msg');
     if (msgEl) {
@@ -494,6 +391,7 @@ export class UIManager {
       msgEl.style.color = isSuccess ? '#10b981' : '#ef4444';
     }
   }
+
   // 멤버 관리
   renderMembers() {
     const membersArea = $('#membersArea');
@@ -514,6 +412,7 @@ export class UIManager {
       };
     });
   }
+
   renderLoginChips() {
     const loginChips = $('#loginChips');
     if (!loginChips) return;
@@ -527,6 +426,7 @@ export class UIManager {
       chip.onclick = (e) => this.app.login(e.target.dataset.member);
     });
   }
+
   addMember() {
     const input = $('#memberInput');
     if (!input) return;
@@ -543,12 +443,14 @@ export class UIManager {
     this.renderMembers();
     this.renderLoginChips();
   }
+
   resetMembers() {
     this.app.config.members = ["👨‍💼 아빠","👩‍💼 엄마","🌟 우주","👵 할머니","👴 할아버지","👩‍🦰 고모"];
     this.app.saveAppConfig();
     this.renderMembers();
     this.renderLoginChips();
   }
+
   // 앨범 관리
   renderAlbums() {
     const albumsList = $('#albumsList');
@@ -562,8 +464,8 @@ export class UIManager {
         `<span class="album-item" data-album="${album}" data-i="${i}">${album} <span class="del" title="삭제">×</span></span>`
       ).join('');
       
-      // 삭제 이벤트 바인딩 (다중 선택자이므로 $$ 사용!)
-      $$('#albumsList .album-item .del').forEach(el => {
+      // 삭제 이벤트 바인딩
+      $('#albumsList .album-item .del').forEach(el => {
         el.onclick = async (e) => {
           e.stopPropagation();
           const i = Number(e.target.closest('.album-item').dataset.i);
@@ -583,11 +485,12 @@ export class UIManager {
         '<span class="album-item active" data-album="all">전체</span>' +
         albums.map(album => `<span class="album-item" data-album="${album}">${album}</span>`).join('');
       
-      $$('#albumFilter .album-item').forEach(el => {
+      $('#albumFilter .album-item').forEach(el => {
         el.onclick = () => this.app.filterByAlbum(el.dataset.album);
       });
     }
   }
+
   addAlbum() {
     const input = $('#albumInput');
     if (!input) return;
@@ -604,11 +507,13 @@ export class UIManager {
     input.value = '';
     this.renderAlbums();
   }
+
   // 캘린더 관리
   navigateMonth(direction) {
     this.currentMonth.setMonth(this.currentMonth.getMonth() + direction);
     this.app.renderCalendar();
   }
+
   showYearPicker() {
     const modal = $('#datePickerModal');
     const header = $('#datePickerHeader');
@@ -620,9 +525,11 @@ export class UIManager {
     content.innerHTML = this.generateYearGrid();
     modal.classList.add('show');
   }
+
   hideDatePicker() {
     $('#datePickerModal')?.classList.remove('show');
   }
+
   generateYearGrid() {
     const currentYear = this.currentMonth.getFullYear();
     const startYear = currentYear - 10;
@@ -638,6 +545,7 @@ export class UIManager {
       ).join('')}
     </div>`;
   }
+
   generateMonthGrid() {
     const months = ['1월', '2월', '3월', '4월', '5월', '6월', 
                    '7월', '8월', '9월', '10월', '11월', '12월'];
@@ -649,6 +557,7 @@ export class UIManager {
       ).join('')}
     </div>`;
   }
+
   selectYear(year) {
     const currentMonthIndex = this.currentMonth.getMonth();
     this.currentMonth = new Date(year, currentMonthIndex, 1);
@@ -662,6 +571,7 @@ export class UIManager {
       content.innerHTML = this.generateMonthGrid();
     }
   }
+
   selectMonth(monthIndex) {
     const currentYear = this.currentMonth.getFullYear();
     this.currentMonth = new Date(currentYear, monthIndex, 1);
@@ -669,6 +579,7 @@ export class UIManager {
     this.app.renderCalendar();
     this.hideDatePicker();
   }
+
   // 다중선택 모드
   toggleMultiSelectMode() {
     this.isMultiSelectMode = !this.isMultiSelectMode;
@@ -693,6 +604,7 @@ export class UIManager {
     
     this.app.renderAlbumPhotos();
   }
+
   exitMultiSelectMode() {
     this.isMultiSelectMode = false;
     this.selectedPhotos.clear();
@@ -710,6 +622,7 @@ export class UIManager {
     
     this.app.renderAlbumPhotos();
   }
+
   selectPhoto(photoId) {
     if (this.selectedPhotos.has(photoId)) {
       this.selectedPhotos.delete(photoId);
@@ -724,6 +637,7 @@ export class UIManager {
     
     this.updateMultiSelectInfo();
   }
+
   updateMultiSelectInfo() {
     const count = this.selectedPhotos.size;
     const moveBtn = $('#moveToAlbumBtn');
@@ -743,6 +657,7 @@ export class UIManager {
       }
     }
   }
+
   async moveSelectedToAlbum() {
     if (this.selectedPhotos.size === 0) return;
     
@@ -774,8 +689,8 @@ export class UIManager {
     };
     
     $('#confirmAlbumSelect').onclick = async () => {
-      const checkboxes = $$('#albumCheckboxContainer input[type="checkbox"]:checked');
-      const selectedAlbums = checkboxes.map(cb => cb.value);
+      const checkboxes = $('#albumCheckboxContainer input[type="checkbox"]:checked');
+      const selectedAlbums = Array.from(checkboxes).map(cb => cb.value);
       
       if (selectedAlbums.length === 0) {
         alert('앨범을 선택해주세요.');
@@ -793,6 +708,7 @@ export class UIManager {
       }
     };
   }
+
   async deleteSelectedPhotos() {
     if (this.selectedPhotos.size === 0) return;
     
@@ -807,6 +723,7 @@ export class UIManager {
       alert('사진 삭제 중 오류가 발생했습니다: ' + e.message);
     }
   }
+
   // Day Grid 관리
   showDayGrid(date) {
     const overlay = $('#dayGridOverlay');
@@ -815,11 +732,12 @@ export class UIManager {
     const grid = $('#dayGrid');
     
     if (!overlay || !grid) return;
+
     this.currentGridDate = date;
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos.clear();
+
     const dayPhotos = this.app.getPhotosByDate(date);
-    this.dayGridPhotos = dayPhotos;
     
     if (title) title.textContent = date;
     if (count) count.textContent = `${dayPhotos.length}장`;
@@ -837,41 +755,27 @@ export class UIManager {
       </div>`;
     }).join('');
     
-      // 이벤트 바인딩
-      this.bindDayGridCellEvents();
-
-      overlay.classList.remove('slide-left', 'slide-right');
-      overlay.classList.add('show');
-      overlay.setAttribute('aria-hidden', 'false');
-      overlay.focus();
+    // 이벤트 바인딩
+    this.bindDayGridCellEvents();
+    
+    overlay.classList.add('show');
   }
-  hideDayGrid(direction = 'back') {
+
+  hideDayGrid() {
     const overlay = $('#dayGridOverlay');
-    if (overlay && overlay.contains(document.activeElement)) {
-      document.activeElement.blur();
-    }
-    if (!overlay) return;
-    if (direction === 'forward') {
-      overlay.classList.add('slide-left');
-      overlay.setAttribute('aria-hidden', 'true');
-      setTimeout(() => {
-        overlay.classList.remove('show', 'slide-left', 'slide-right');
-      }, 300);
-    } else {
-      overlay.classList.add('no-transition');
-      overlay.classList.remove('show', 'slide-left', 'slide-right');
-      overlay.setAttribute('aria-hidden', 'true');
-      requestAnimationFrame(() => overlay.classList.remove('no-transition'));
-    }
+    overlay?.classList.remove('show');
+    
     this.exitDayGridMultiSelect();
   }
+
   bindDayGridCellEvents() {
     const grid = $('#dayGrid');
     if (!grid) return;
-    // 다중 요소 순회이므로 $$ 사용
-    $$('.cell', grid).forEach(cell => {
+
+    $('.cell', grid).forEach(cell => {
       const photoId = cell.dataset.photoId;
       let longPressTimer;
+
       // 터치 시작 (꾹 누르기)
       cell.addEventListener('touchstart', () => {
         if (this.dayGridMultiSelectMode) return;
@@ -882,24 +786,29 @@ export class UIManager {
           navigator.vibrate?.(100);
         }, 1000);
       }, {passive: true});
+
       cell.addEventListener('touchend', () => {
         clearTimeout(longPressTimer);
       }, {passive: true});
+
       cell.addEventListener('touchcancel', () => {
         clearTimeout(longPressTimer);
       }, {passive: true});
+
       // 클릭 이벤트
       cell.addEventListener('click', (e) => {
         e.preventDefault();
-
+        
         if (this.dayGridMultiSelectMode) {
           this.toggleDayGridSelection(photoId);
         } else {
-          this.app.openPhotoById(photoId, this.dayGridPhotos);
+          this.hideDayGrid();
+          setTimeout(() => this.app.openPhotoById(photoId), 50);
         }
       });
     });
   }
+
   startDayGridMultiSelect() {
     this.dayGridMultiSelectMode = true;
     const grid = $('#dayGrid');
@@ -910,6 +819,7 @@ export class UIManager {
     
     this.updateDayGridMultiSelectInfo();
   }
+
   exitDayGridMultiSelect() {
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos.clear();
@@ -920,11 +830,11 @@ export class UIManager {
     grid?.classList.remove('multiselect-mode');
     header?.classList.remove('show');
     
-    // 다중 요소 해제이므로 $$ 사용
-    $$('.cell.selected', grid).forEach(cell => {
+    $('.cell.selected', grid).forEach(cell => {
       cell.classList.remove('selected');
     });
   }
+
   toggleDayGridSelection(photoId) {
     if (this.dayGridSelectedPhotos.has(photoId)) {
       this.dayGridSelectedPhotos.delete(photoId);
@@ -937,6 +847,7 @@ export class UIManager {
     
     this.updateDayGridMultiSelectInfo();
   }
+
   updateDayGridMultiSelectInfo() {
     const count = this.dayGridSelectedPhotos.size;
     const info = $('#dayGridMultiselectInfo');
@@ -947,6 +858,74 @@ export class UIManager {
     
     if (moveBtn) moveBtn.disabled = count === 0;
     if (deleteBtn) deleteBtn.disabled = count === 0;
+  }
+
+   async moveDayGridSelectedToAlbum() {
+    if (this.dayGridSelectedPhotos.size === 0) return;
+
+    const albumCheckboxes = this.app.config.albums.map(album =>
+      `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer;">
+         <input type="checkbox" value="${album}">
+         <span>${album}</span>
+       </label>`
+    ).join('');
+
+    const modalHtml = `
+      <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;" id="albumSelectModal">
+        <div style="background:white; padding:24px; border-radius:16px; max-width:400px; width:90%;">
+          <h3>📁 앨범 선택</h3>
+          <p>${this.dayGridSelectedPhotos.size}개 사진을 이동할 앨범을 선택하세요</p>
+          <div id="albumCheckboxContainer">${albumCheckboxes}</div>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <button id="cancelAlbumSelect" class="btn secondary">취소</button>
+            <button id="confirmAlbumSelect" class="btn">이동하기</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    $('#cancelAlbumSelect').onclick = () => {
+      $('#albumSelectModal')?.remove();
+    };
+
+    $('#confirmAlbumSelect').onclick = async () => {
+      const checkboxes = $('#albumCheckboxContainer input[type="checkbox"]:checked');
+      const selectedAlbums = Array.from(checkboxes).map(cb => cb.value);
+
+      if (selectedAlbums.length === 0) {
+        alert('앨범을 선택해주세요.');
+        return;
+      }
+
+      try {
+        await this.app.movePhotosToAlbums(Array.from(this.dayGridSelectedPhotos), selectedAlbums);
+        alert(`${this.dayGridSelectedPhotos.size}개 사진이 선택한 앨범에 추가되었습니다.`);
+        $('#albumSelectModal')?.remove();
+        this.exitDayGridMultiSelect();
+        this.showDayGrid(this.currentGridDate);
+        this.app.renderCurrentView();
+      } catch (e) {
+        alert('앨범 이동 중 오류가 발생했습니다: ' + e.message);
+      }
+    };
+  }
+
+  async deleteDayGridSelectedPhotos() {
+    if (this.dayGridSelectedPhotos.size === 0) return;
+
+    if (!confirm(`선택한 ${this.dayGridSelectedPhotos.size}개 사진을 정말 삭제하시겠습니까?`)) return;
+
+    try {
+      await this.app.deleteMultiplePhotos(Array.from(this.dayGridSelectedPhotos));
+      alert(`${this.dayGridSelectedPhotos.size}개 사진이 삭제되었습니다.`);
+      this.exitDayGridMultiSelect();
+      this.showDayGrid(this.currentGridDate);
+      this.app.load();
+    } catch (e) {
+      alert('사진 삭제 중 오류가 발생했습니다: ' + e.message);
+    }
   }
 
   // 모달 관리
@@ -962,173 +941,6 @@ export class UIManager {
     document.body.style.overflow = 'auto';
   }
 
-  // 중복 사진 관리
-  showDuplicateManager() {
-    const duplicates = this.app.photoManager.findDuplicatePhotos(this.app.photos);
-    
-    if (duplicates.length === 0) {
-      alert('중복된 사진이 없어요!');
-      return;
-    }
-    
-    const modal = $('#duplicateModal');
-    const content = $('#duplicateContent');
-    
-    if (!modal || !content) return;
-    
-    content.innerHTML = `
-      <div style="padding: 20px;">
-        <h3>🗂️ 중복 사진 관리 (${duplicates.length}개 그룹)</h3>
-        <p>같은 파일명과 크기를 가진 사진들입니다.</p>
-        
-        <div style="display: flex; gap: 10px; margin: 16px 0;">
-          <button id="deleteAllDuplicates" class="btn" style="background: #ef4444;">모든 중복본 삭제</button>
-          <button id="closeDuplicateModal" class="btn secondary">닫기</button>
-        </div>
-        
-        <div style="max-height: 400px; overflow-y: auto;">
-          ${duplicates.map((dup, i) => `
-            <div style="border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <span>${dup.fileName} (${this.app.photoManager.formatFileSize(dup.fileSize)})</span>
-                <button onclick="window.uiManager.deleteDuplicate(${i})" class="btn secondary">중복본 삭제</button>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <div style="flex: 1; text-align: center;">
-                  <div style="margin-bottom: 4px;">원본</div>
-                  <img src="${preview(dup.original.url, 150, 150)}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px;" />
-                </div>
-                <div style="flex: 1; text-align: center;">
-                  <div style="margin-bottom: 4px;">중복본</div>
-                  <img src="${preview(dup.duplicate.url, 150, 150)}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px;" />
-                </div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-    
-    modal.classList.add('show');
-    
-    $('#deleteAllDuplicates').onclick = () => this.deleteAllDuplicates(duplicates);
-    $('#closeDuplicateModal').onclick = () => modal.classList.remove('show');
-  }
-
-  async deleteDuplicate(index) {
-    const duplicates = this.app.photoManager.findDuplicatePhotos(this.app.photos);
-    const dup = duplicates[index];
-    
-    if (!confirm(`"${dup.fileName}" 중복본을 삭제하시겠습니까?`)) return;
-    
-    try {
-      await this.app.photoManager.deletePhoto(dup.duplicate);
-      this.showDuplicateManager(); // 목록 새로고침
-    } catch (error) {
-      alert('삭제 중 오류가 발생했습니다: ' + error.message);
-    }
-  }
-
-  async deleteAllDuplicates(duplicates) {
-    if (!confirm(`${duplicates.length}개의 중복본을 모두 삭제하시겠습니까?`)) return;
-    
-    try {
-      const duplicatePhotos = duplicates.map(d => d.duplicate);
-      await this.app.photoManager.deleteMultiplePhotos(duplicatePhotos);
-      
-      alert(`${duplicates.length}개의 중복본이 삭제되었습니다.`);
-      $('#duplicateModal')?.classList.remove('show');
-      this.app.load();
-    } catch (e) {
-      alert('사진 삭제 중 오류가 발생했습니다: ' + e.message);
-    }
-  }
-
-  // 활동 로그 표시
-  async showActivityLogs() {
-    const logs = await this.app.storageManager.loadActivityLogs();
-    
-    const modal = $('#activityLogModal');
-    const content = $('#activityLogContent');
-    
-    if (!modal || !content) return;
-    
-    // 최근 7일간의 로그만 표시
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recentLogs = logs.filter(log => new Date(log.timestamp) > weekAgo);
-    
-    // 사용자별 통계
-    const userStats = {};
-    recentLogs.forEach(log => {
-      if (!userStats[log.user]) {
-        userStats[log.user] = { logins: 0, uploads: 0, comments: 0, lastSeen: null };
-      }
-      
-      if (log.action === 'login') userStats[log.user].logins++;
-      if (log.action === 'upload') userStats[log.user].uploads++;
-      if (log.action === 'comment') userStats[log.user].comments++;
-      
-      if (!userStats[log.user].lastSeen || new Date(log.timestamp) > new Date(userStats[log.user].lastSeen)) {
-        userStats[log.user].lastSeen = log.timestamp;
-      }
-    });
-    
-    content.innerHTML = `
-      <div style="padding: 20px;">
-        <h3>가족 활동 로그 (최근 7일)</h3>
-        
-        <div style="margin-bottom: 24px;">
-          <h4>활동 요약</h4>
-          ${Object.entries(userStats).map(([user, stats]) => `
-            <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 8px;">
-              <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: 600;">${user}</span>
-                <span style="font-size: 12px;">
-                  ${stats.lastSeen ? new Date(stats.lastSeen).toLocaleDateString() : ''}
-                </span>
-              </div>
-              <div style="font-size: 12px; margin-top: 4px;">
-                접속 ${stats.logins}회 • 업로드 ${stats.uploads}개 • 댓글 ${stats.comments}개
-              </div>
-            </div>
-          `).join('')}
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-          <h4>상세 활동 로그</h4>
-          <button id="closeActivityLog" class="btn secondary">닫기</button>
-        </div>
-        
-        <div style="max-height: 300px; overflow-y: auto;">
-          ${recentLogs.length === 0 ? 
-            '<div style="text-align: center; padding: 20px;">최근 활동이 없어요</div>' :
-            recentLogs.map(log => {
-              const actionText = {
-                'login': '로그인',
-                'upload': '사진 업로드', 
-                'comment': '댓글 작성',
-                'logout': '로그아웃'
-              }[log.action] || log.action;
-              
-              return `
-                <div style="border-bottom: 1px solid var(--border); padding: 8px 0;">
-                  <div style="display: flex; justify-content: space-between;">
-                    <span><strong>${log.user}</strong> ${actionText}</span>
-                    <span style="font-size: 12px;">
-                      ${new Date(log.timestamp).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              `;
-            }).join('')
-          }
-        </div>
-      </div>
-    `;
-    
-    modal.classList.add('show');
-    $('#closeActivityLog').onclick = () => modal.classList.remove('show');
-  }
   // 주간 표시
   getWeekday(dateString) {
     const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -1136,15 +948,6 @@ export class UIManager {
     return days[date.getDay()];
   }
 }
+
 // 전역에서 접근 가능하도록
 window.uiManager = null;
-
-
-
-
-
-
-
-
-
-

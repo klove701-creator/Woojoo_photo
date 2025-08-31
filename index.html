@@ -65,16 +65,7 @@
         <label>Cloudinary Upload Preset</label>
         <input id="cld-preset" type="text" placeholder="upload preset" style="width:100%" />
       </div>
-
-      <!-- Cloudinary Usage Gauge -->
-      <div style="margin-top:16px">
-        <div style="font-weight:700; margin:8px 0">☁️ Cloudinary 사용량</div>
-        <div id="cloudinaryUsageBar" class="usage-bar">
-          <div id="cloudinaryUsageFill" class="usage-bar-fill"></div>
-        </div>
-        <div id="cloudinaryUsageText" class="muted" style="margin-top:4px; font-size:12px"></div>
-      </div>
-
+      
       <!-- Theme Selector -->
       <div style="margin-top:16px">
         <div style="font-weight:700; margin:8px 0">🎨 테마 선택</div>
@@ -195,22 +186,6 @@
   <input id="file" type="file" accept="image/*,video/*" multiple style="display:none" />
   <input id="calendarFile" type="file" accept="image/*,video/*" multiple style="display:none" />
 
-  <!-- Upload Preview Overlay -->
-  <div id="uploadPreviewOverlay" class="upload-preview-overlay" aria-hidden="true" tabindex="-1">
-    <div class="upload-preview-header">
-      <button id="uploadCancel" class="btn secondary">취소</button>
-      <div class="upload-preview-title">사진 선택</div>
-      <button id="uploadConfirm" class="btn">업로드</button>
-    </div>
-    <div id="uploadPreviewContainer" class="upload-preview-container">
-      <div id="uploadPreviewGrid" class="upload-preview-grid"></div>
-      <div id="uploadFastScrollTrack" class="fast-scroll-track">
-        <div id="uploadFastScrollThumb" class="fast-scroll-thumb"></div>
-      </div>
-      <div id="uploadDateBubble" class="date-bubble"></div>
-    </div>
-  </div>
-
   <!-- Modal -->
   <div id="modal" class="modal" role="dialog" aria-modal="true">
     <div class="panel">
@@ -282,7 +257,7 @@
   </div>
 
   <!-- Day Grid Overlay -->
-  <div id="dayGridOverlay" class="day-grid-overlay" aria-hidden="true" tabindex="-1">
+  <div id="dayGridOverlay" class="day-grid-overlay" aria-hidden="true">
     <div class="day-grid-header">
       <button id="dayGridBack" class="day-grid-close" aria-label="뒤로">‹ 뒤로</button>
       <div class="day-grid-title" id="dayGridTitle">-</div>
