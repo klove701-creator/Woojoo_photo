@@ -454,6 +454,92 @@ export class StorageManager {
     this.unsubscribers.clear();
   }
 
+  // 활동 로그 저장
+  async saveActivityLog(action, details = {}) {
+    const log = {
+      timestamp: Date.now(),
+      action: action,
+      user: details.user || this.currentUser,
+      details: details
+    };
+
+    if (this.firebaseOn && this.db) {
+      return this.saveActivityLogToFirebase(log);
+    } else {
+      return this.saveActivityLogToLocal(log);
+    }
+  }
+
+  // Firebase에 활동 로그 저장
+  async saveActivityLogToFirebase(log) {
+    try {
+      await addDoc(collection(this.db, 'activity_logs'), log);
+      console.log('Firebase에 활동 로그 저장 성공');
+    } catch (error) {
+      console.error('Firebase 활동 로그 저장 오류:', error);
+      throw error;
+    }
+  }
+
+  // 로컬에 활동 로그 저장
+  saveActivityLogToLocal(log) {
+    try {
+      const logs = JSON.parse(localStorage.getItem('activity_logs') || '[]');
+      logs.push(log);
+
+      // 로그가 너무 많으면 오래된 것부터 삭제 (최대 1000개)
+      if (logs.length > 1000) {
+        logs.splice(0, logs.length - 1000);
+      }
+
+      localStorage.setItem('activity_logs', JSON.stringify(logs));
+      console.log('로컬에 활동 로그 저장 성공');
+    } catch (error) {
+      console.error('로컬 활동 로그 저장 오류:', error);
+      throw error;
+    }
+  }
+
+  // 활동 로그 로드
+  async loadActivityLogs() {
+    if (this.firebaseOn && this.db) {
+      return this.loadActivityLogsFromFirebase();
+    } else {
+      return this.loadActivityLogsFromLocal();
+    }
+  }
+
+  // Firebase에서 활동 로그 로드
+  async loadActivityLogsFromFirebase() {
+    try {
+      const q = query(
+        collection(this.db, 'activity_logs'),
+        orderBy('timestamp', 'desc'),
+        limit(200)
+      );
+      const snapshot = await getDocs(q);
+      const logs = [];
+      snapshot.forEach(doc => {
+        logs.push({ id: doc.id, ...doc.data() });
+      });
+      return logs;
+    } catch (error) {
+      console.error('Firebase 활동 로그 로드 오류:', error);
+      return [];
+    }
+  }
+
+  // 로컬에서 활동 로그 로드
+  loadActivityLogsFromLocal() {
+    try {
+      const logs = JSON.parse(localStorage.getItem('activity_logs') || '[]');
+      return logs.sort((a, b) => b.timestamp - a.timestamp);
+    } catch (error) {
+      console.error('로컬 활동 로그 로드 오류:', error);
+      return [];
+    }
+  }
+
   // 정리
   cleanup() {
     this.unsubscribeAll();

@@ -196,10 +196,25 @@ export class App {
     this.currentUser = member;
     localStorage.setItem('currentUser', member);
     this.photoManager.setCurrentUser(member);
+
+    // 로그인 활동 로그 저장
+    this.storageManager.saveActivityLog('login', {
+      user: member,
+      timestamp: Date.now()
+    }).catch(e => console.warn('로그인 로그 저장 실패:', e));
+
     this.showApp();
   }
 
   logout() {
+    // 로그아웃 활동 로그 저장
+    if (this.currentUser) {
+      this.storageManager.saveActivityLog('logout', {
+        user: this.currentUser,
+        timestamp: Date.now()
+      }).catch(e => console.warn('로그아웃 로그 저장 실패:', e));
+    }
+
     this.currentUser = null;
     localStorage.removeItem('currentUser');
     this.photoManager.setCurrentUser(null);

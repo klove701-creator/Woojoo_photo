@@ -112,7 +112,15 @@ export class PhotoManager {
     
     // 데이터베이스에 저장
     await this.storageManager.savePhoto(photoData);
-    
+
+    // 업로드 활동 로그 저장
+    this.storageManager.saveActivityLog('upload', {
+      user: this.currentUser,
+      photoId: photoData.id,
+      fileName: file.name,
+      timestamp: Date.now()
+    }).catch(e => console.warn('업로드 활동 로그 저장 실패:', e));
+
     return photoData;
   }
 

@@ -163,12 +163,33 @@ export class ModalManager {
       comments.forEach(c => {
         const div = document.createElement('div');
         div.className = 'comment-item';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'comment-header';
+
         const userSpan = document.createElement('strong');
-        userSpan.textContent = c.user + ': ';
-        const textSpan = document.createElement('span');
-        textSpan.textContent = c.text;
-        div.appendChild(userSpan);
-        div.appendChild(textSpan);
+        userSpan.textContent = c.user;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'comment-time';
+        const date = new Date(c.createdAt);
+        timeSpan.textContent = date.toLocaleString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        headerDiv.appendChild(userSpan);
+        headerDiv.appendChild(timeSpan);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'comment-text';
+        textDiv.textContent = c.text;
+
+        div.appendChild(headerDiv);
+        div.appendChild(textDiv);
         list.appendChild(div);
       });
     });
@@ -189,6 +210,14 @@ export class ModalManager {
       createdAt: Date.now()
     };
     this.app.storageManager.addComment(this.currentPhoto, comment);
+
+    // 댓글 작성 활동 로그 저장
+    this.app.storageManager.saveActivityLog('comment', {
+      user: this.app.currentUser,
+      photoId: this.currentPhoto.id || this.currentPhoto.public_id || this.currentPhoto.url,
+      timestamp: Date.now()
+    }).catch(e => console.warn('댓글 활동 로그 저장 실패:', e));
+
     input.value = '';
   }
 
