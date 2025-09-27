@@ -368,9 +368,12 @@
   <!-- Day Grid Overlay -->
   <div id="dayGridOverlay" class="day-grid-overlay" aria-hidden="true" tabindex="-1">
     <div class="day-grid-header">
-      <button id="dayGridBack" class="day-grid-close" aria-label="뒤로">‹ 뒤로</button>
+      <button id="dayGridBack" class="day-grid-close" aria-label="뒤로">←</button>
       <div class="day-grid-title" id="dayGridTitle">-</div>
-      <div id="dayGridCount"></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="dayGridMultiselectBtn" class="day-grid-multiselect-toggle">선택</button>
+        <div id="dayGridCount"></div>
+      </div>
     </div>
     
     <!-- Multi-select Header -->

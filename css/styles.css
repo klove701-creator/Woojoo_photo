@@ -1411,13 +1411,42 @@ input:focus, select:focus{
 }
 .day-grid-title{ font-weight:700; flex:1; }
 .day-grid-close{
-  background:white;
-  color:var(--text);
-  border:none;
-  border-radius:10px;
-  padding:6px 10px;
+  background:rgba(255,255,255,0.15);
+  color:white;
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:50%;
+  width:32px;
+  height:32px;
   cursor:pointer;
   font-weight:600;
+  font-size:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s ease;
+  backdrop-filter:blur(10px);
+}
+.day-grid-close:hover{
+  background:rgba(255,255,255,0.25);
+  transform:scale(1.05);
+}
+.day-grid-multiselect-toggle{
+  background:rgba(255,255,255,0.2);
+  color:white;
+  border:1px solid rgba(255,255,255,0.3);
+  border-radius:8px;
+  padding:6px 12px;
+  cursor:pointer;
+  font-weight:600;
+  font-size:12px;
+  transition:all 0.2s ease;
+}
+.day-grid-multiselect-toggle:hover{
+  background:rgba(255,255,255,0.3);
+}
+.day-grid-multiselect-toggle.active{
+  background:white;
+  color:var(--p);
 }
 .day-grid-content{
   padding:12px;

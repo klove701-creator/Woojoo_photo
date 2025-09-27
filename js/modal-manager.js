@@ -54,7 +54,7 @@ export class ModalManager {
         ghost.style.maxHeight = '70vh';
         ghost.style.objectFit = 'contain';
         ghost.style.zIndex = '5';
-        ghost.style.transition = 'transform 200ms ease, opacity 200ms ease';
+        ghost.style.transition = 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)';
         ghost.style.transform = 'translateX(0)';
         ghost.style.opacity = '1';
         viewer.appendChild(ghost);
@@ -87,7 +87,7 @@ export class ModalManager {
     if (ghost && direction) {
       const incoming = isVideoUrl(photo.url) ? bigVideo : bigImg;
       // Prepare incoming element start state
-      incoming.style.transition = 'transform 200ms ease, opacity 200ms ease';
+      incoming.style.transition = 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)';
       incoming.style.transform = direction === 'left' ? 'translateX(40px)' : 'translateX(-40px)';
       incoming.style.opacity = '0';
       // Force reflow before starting animations
@@ -106,7 +106,7 @@ export class ModalManager {
         incoming.style.transition = '';
         incoming.style.transform = '';
         incoming.style.opacity = '';
-      }, 220);
+      }, 420);
     }
   }
 

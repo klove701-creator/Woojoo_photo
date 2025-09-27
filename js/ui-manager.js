@@ -226,6 +226,10 @@ export class UIManager {
   // Day Grid 이벤트
   bindDayGridEvents() {
     $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid());
+    $('#dayGridMultiselectBtn')?.addEventListener('click', () => this.toggleDayGridMultiSelectMode());
+    $('#dayGridMoveToAlbum')?.addEventListener('click', () => this.moveDayGridSelectedToAlbum());
+    $('#dayGridDeleteSelected')?.addEventListener('click', () => this.deleteDayGridSelectedPhotos());
+    $('#dayGridCancelMultiselect')?.addEventListener('click', () => this.exitDayGridMultiSelect());
   }
 
   // 일정 관련 이벤트
@@ -903,23 +907,7 @@ export class UIManager {
     // 다중 요소 순회이므로 $$ 사용
     $$('.cell', grid).forEach(cell => {
       const photoId = cell.dataset.photoId;
-      let longPressTimer;
-      // 터치 시작 (꾹 누르기)
-      cell.addEventListener('touchstart', () => {
-        if (this.dayGridMultiSelectMode) return;
-        
-        longPressTimer = setTimeout(() => {
-          this.startDayGridMultiSelect();
-          this.toggleDayGridSelection(photoId);
-          navigator.vibrate?.(100);
-        }, 1000);
-      }, {passive: true});
-      cell.addEventListener('touchend', () => {
-        clearTimeout(longPressTimer);
-      }, {passive: true});
-      cell.addEventListener('touchcancel', () => {
-        clearTimeout(longPressTimer);
-      }, {passive: true});
+
       // 클릭 이벤트
       cell.addEventListener('click', (e) => {
         e.preventDefault();
@@ -932,26 +920,48 @@ export class UIManager {
       });
     });
   }
+  toggleDayGridMultiSelectMode() {
+    if (this.dayGridMultiSelectMode) {
+      this.exitDayGridMultiSelect();
+    } else {
+      this.startDayGridMultiSelect();
+    }
+  }
+
   startDayGridMultiSelect() {
     this.dayGridMultiSelectMode = true;
+    this.dayGridSelectedPhotos.clear();
+
     const grid = $('#dayGrid');
     const header = $('#dayGridMultiselectHeader');
-    
+    const btn = $('#dayGridMultiselectBtn');
+
     grid?.classList.add('multiselect-mode');
     header?.classList.add('show');
-    
+
+    if (btn) {
+      btn.textContent = '취소';
+      btn.classList.add('active');
+    }
+
     this.updateDayGridMultiSelectInfo();
   }
   exitDayGridMultiSelect() {
     this.dayGridMultiSelectMode = false;
     this.dayGridSelectedPhotos.clear();
-    
+
     const grid = $('#dayGrid');
     const header = $('#dayGridMultiselectHeader');
-    
+    const btn = $('#dayGridMultiselectBtn');
+
     grid?.classList.remove('multiselect-mode');
     header?.classList.remove('show');
-    
+
+    if (btn) {
+      btn.textContent = '선택';
+      btn.classList.remove('active');
+    }
+
     // 다중 요소 해제이므로 $$ 사용
     $$('.cell.selected', grid).forEach(cell => {
       cell.classList.remove('selected');
@@ -974,11 +984,78 @@ export class UIManager {
     const info = $('#dayGridMultiselectInfo');
     const moveBtn = $('#dayGridMoveToAlbum');
     const deleteBtn = $('#dayGridDeleteSelected');
-    
+
     if (info) info.textContent = `${count}개 선택됨`;
-    
+
     if (moveBtn) moveBtn.disabled = count === 0;
     if (deleteBtn) deleteBtn.disabled = count === 0;
+  }
+
+  async moveDayGridSelectedToAlbum() {
+    if (this.dayGridSelectedPhotos.size === 0) return;
+
+    const albumCheckboxes = this.app.config.albums.map(album =>
+      `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer;">
+         <input type="checkbox" value="${album}">
+         <span>${album}</span>
+       </label>`
+    ).join('');
+
+    const modalHtml = `
+      <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;" id="dayGridAlbumSelectModal">
+        <div style="background:white; padding:24px; border-radius:16px; max-width:400px; width:90%;">
+          <h3>📁 앨범 선택</h3>
+          <p>${this.dayGridSelectedPhotos.size}개 사진을 이동할 앨범을 선택하세요</p>
+          <div id="dayGridAlbumCheckboxContainer">${albumCheckboxes}</div>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+            <button id="cancelDayGridAlbumSelect" class="btn secondary">취소</button>
+            <button id="confirmDayGridAlbumSelect" class="btn">이동하기</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    $('#cancelDayGridAlbumSelect').onclick = () => {
+      $('#dayGridAlbumSelectModal')?.remove();
+    };
+
+    $('#confirmDayGridAlbumSelect').onclick = async () => {
+      const checkboxes = $$('#dayGridAlbumCheckboxContainer input[type="checkbox"]:checked');
+      const selectedAlbums = checkboxes.map(cb => cb.value);
+
+      if (selectedAlbums.length === 0) {
+        alert('앨범을 선택해주세요.');
+        return;
+      }
+
+      try {
+        await this.app.movePhotosToAlbums(Array.from(this.dayGridSelectedPhotos), selectedAlbums);
+        alert(`${this.dayGridSelectedPhotos.size}개 사진이 선택한 앨범에 추가되었습니다.`);
+        $('#dayGridAlbumSelectModal')?.remove();
+        this.exitDayGridMultiSelect();
+        this.app.renderCurrentView();
+      } catch (e) {
+        alert('앨범 이동 중 오류가 발생했습니다: ' + e.message);
+      }
+    };
+  }
+
+  async deleteDayGridSelectedPhotos() {
+    if (this.dayGridSelectedPhotos.size === 0) return;
+
+    if (!confirm(`선택한 ${this.dayGridSelectedPhotos.size}개 사진을 정말 삭제하시겠습니까?`)) return;
+
+    try {
+      await this.app.deleteMultiplePhotos(Array.from(this.dayGridSelectedPhotos));
+      alert(`${this.dayGridSelectedPhotos.size}개 사진이 삭제되었습니다.`);
+      this.exitDayGridMultiSelect();
+      this.hideDayGrid();
+      this.app.load();
+    } catch (e) {
+      alert('사진 삭제 중 오류가 발생했습니다: ' + e.message);
+    }
   }
 
   // 모달 관리
