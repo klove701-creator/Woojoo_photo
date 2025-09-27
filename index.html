@@ -45,6 +45,7 @@
         <div class="tab active" data-tab="timeline">타임라인</div>
         <div class="tab" data-tab="calendar">캘린더</div>
         <div class="tab" data-tab="albums">앨범</div>
+        <div class="tab" data-tab="schedule">일정표</div>
       </div>
     </div>
   </div>
@@ -52,10 +53,10 @@
   <div class="wrap">
     <!-- Setup Panel -->
     <div id="setup" class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center">
+      <div style="display:none">
         <strong>🔧 앱 설정</strong><span class="muted">자동입력됨</span>
       </div>
-      <div style="margin-top:16px">
+      <div style="display:none">
         <label>Firebase Project ID</label>
         <input id="fb-project" type="text" placeholder="Project ID" style="width:100%;margin-bottom:8px" />
         <label>Firebase API Key</label>
@@ -113,11 +114,20 @@
         </div>
       </div>
       
-      <div style="margin-top:16px; display:flex; gap:8px">
+      <!-- Activity Logs -->
+      <div style="margin-top:16px">
+        <div style="font-weight:700; margin:8px 0">📊 접속 로그</div>
+        <div id="activityLogsContainer" style="max-height:200px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px; padding:8px;">
+          <div id="activityLogsList" class="activity-logs"></div>
+        </div>
+        <button id="refreshLogs" class="btn secondary" style="margin-top:8px; width:100%">로그 새로고침</button>
+      </div>
+      
+      <div style="margin-top:16px; display:none; gap:8px">
         <button id="save" class="btn">설정 저장(Firebase 사용)</button>
         <button id="skip" class="btn secondary">Firebase 없이 시작</button>
       </div>
-      <div id="msg" class="muted" style="margin-top:8px"></div>
+      <div id="msg" class="muted" style="margin-top:8px; display:none"></div>
     </div>
 
     <!-- Login -->
@@ -171,6 +181,30 @@
           <div id="albumFilter" class="album-list"></div>
           <div id="albumPhotos" style="margin-top:16px"></div>
         </div>
+
+        <!-- Schedule -->
+        <div id="schedule" class="tab-content">
+          <div class="schedule-manager">
+            <div class="schedule-header">
+              <div style="font-weight:700">📅 가족 일정표</div>
+              <button id="addScheduleBtn" class="btn">+ 일정 추가</button>
+            </div>
+            
+            <div class="schedule-calendar">
+              <div class="schedule-cal-header">
+                <button id="schedulePrevM" class="btn secondary">◀</button>
+                <div id="scheduleCalTitle" class="cal-title-clickable"></div>
+                <button id="scheduleNextM" class="btn secondary">▶</button>
+              </div>
+              <div class="schedule-cal-grid" id="scheduleCalGrid"></div>
+            </div>
+            
+            <div class="schedule-list">
+              <div style="font-weight:700; margin:16px 0 8px 0">📋 예정된 일정</div>
+              <div id="upcomingSchedules"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -208,6 +242,50 @@
         <div id="uploadFastScrollThumb" class="fast-scroll-thumb"></div>
       </div>
       <div id="uploadDateBubble" class="date-bubble"></div>
+    </div>
+  </div>
+
+  <!-- Schedule Modal -->
+  <div id="scheduleModal" class="modal" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="schedule-modal-content">
+        <div class="schedule-modal-header">
+          <h3 id="scheduleModalTitle">일정 추가</h3>
+          <button id="closeScheduleModal" class="action-btn">×</button>
+        </div>
+        
+        <form id="scheduleForm" class="schedule-form">
+          <div class="form-group">
+            <label>제목</label>
+            <input id="scheduleTitle" type="text" placeholder="일정 제목을 입력하세요" required />
+          </div>
+          
+          <div class="form-group">
+            <label>날짜</label>
+            <input id="scheduleDate" type="date" required />
+          </div>
+          
+          <div class="form-group">
+            <label>시간</label>
+            <input id="scheduleTime" type="time" />
+          </div>
+          
+          <div class="form-group">
+            <label>참여자</label>
+            <div id="scheduleParticipants" class="participants-selector"></div>
+          </div>
+          
+          <div class="form-group">
+            <label>메모</label>
+            <textarea id="scheduleMemo" placeholder="추가 메모가 있다면 입력하세요" rows="3"></textarea>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" id="deleteScheduleBtn" class="btn secondary" style="background:#ef4444; display:none;">삭제</button>
+            <button type="submit" class="btn">저장</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 

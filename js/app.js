@@ -9,6 +9,7 @@ export class App {
     this.config = null;
     this.currentUser = null;
     this.photos = [];
+    this.schedules = [];
     this.loading = true;
     this.currentAlbum = null;
     
@@ -46,6 +47,7 @@ export class App {
     this.uiManager.renderLoginChips();
     this.uiManager.renderAlbums();
     this.uiManager.applyTheme(this.config.theme);
+    this.uiManager.loadAndDisplayActivityLogs();
     
     // 앱 상태 확인
     this.checkAppState();
@@ -127,10 +129,10 @@ export class App {
 
   // 앱 상태 확인
   async checkAppState() {
-    if (localStorage.getItem(SETUP_DONE_KEY) !== '1') {
-      this.uiManager.showSetup();
-      return;
-    }
+    // 자동으로 설정 완료로 처리
+    localStorage.setItem(SETUP_DONE_KEY, '1');
+    this.config.useFirebase = true; // 무조건 Firebase 사용
+    this.saveAppConfig();
     
     this.uiManager.hideSetup();
     this.loading = true;
@@ -265,6 +267,7 @@ export class App {
   async load() {
     this.loading = true;
     
+    // 사진 로드
     await this.storageManager.loadPhotos((photos, error) => {
       if (error) {
         console.error('사진 로드 오류:', error);
@@ -281,6 +284,18 @@ export class App {
       // 사진이 로드되었고 스플래시가 아직 보이면 업데이트
       if (photos.length > 0 && !document.getElementById('splashScreen')?.classList.contains('hide')) {
         this.updateSplashWithPhotos();
+      }
+    });
+
+    // 일정 로드
+    await this.storageManager.loadSchedules((schedules, error) => {
+      if (error) {
+        console.error('일정 로드 오류:', error);
+      } else {
+        this.schedules = schedules;
+        if (this.uiManager.currentTab === 'schedule') {
+          this.renderSchedule();
+        }
       }
     });
   }
@@ -359,6 +374,9 @@ export class App {
     }
     if (this.uiManager.currentTab === 'albums') {
       this.renderAlbumPhotos();
+    }
+    if (this.uiManager.currentTab === 'schedule') {
+      this.renderSchedule();
     }
   }
 
@@ -666,6 +684,167 @@ export class App {
     ).filter(Boolean);
     
     await this.photoManager.deleteMultiplePhotos(photos);
+  }
+
+  // 일정 렌더링
+  renderSchedule() {
+    const calGrid = document.getElementById('scheduleCalGrid');
+    const calTitle = document.getElementById('scheduleCalTitle');
+    const upcomingList = document.getElementById('upcomingSchedules');
+    
+    if (!calGrid || !calTitle || !upcomingList) return;
+    
+    // 캘린더 렌더링
+    this.renderScheduleCalendar();
+    
+    // 예정된 일정 렌더링
+    this.renderUpcomingSchedules();
+  }
+
+  // 일정 캘린더 렌더링
+  renderScheduleCalendar() {
+    const calGrid = document.getElementById('scheduleCalGrid');
+    const calTitle = document.getElementById('scheduleCalTitle');
+    
+    if (!calGrid || !calTitle) return;
+    
+    const currentMonth = this.uiManager.scheduleCurrentMonth || new Date();
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    
+    calTitle.textContent = `${year}년 ${month + 1}월`;
+    
+    const startDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    let html = '';
+    
+    // 요일 헤더
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    html += '<div class="schedule-cal-days">';
+    dayNames.forEach(day => {
+      html += `<div class="schedule-cal-day-header">${day}</div>`;
+    });
+    html += '</div>';
+    
+    html += '<div class="schedule-cal-body">';
+    
+    // 빈 셀들
+    for (let i = 0; i < startDay; i++) {
+      html += '<div class="schedule-cal-cell empty"></div>';
+    }
+    
+    // 실제 날짜들
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const daySchedules = this.schedules.filter(s => s.date === dateStr);
+      
+      html += `<div class="schedule-cal-cell" data-date="${dateStr}">
+        <div class="schedule-cal-date">${day}</div>
+        <div class="schedule-cal-events">
+          ${daySchedules.slice(0, 2).map(schedule => 
+            `<div class="schedule-cal-event" title="${schedule.title}">
+              ${schedule.title.length > 6 ? schedule.title.substring(0, 6) + '...' : schedule.title}
+            </div>`
+          ).join('')}
+          ${daySchedules.length > 2 ? `<div class="schedule-cal-more">+${daySchedules.length - 2}</div>` : ''}
+        </div>
+      </div>`;
+    }
+    
+    html += '</div>';
+    calGrid.innerHTML = html;
+    
+    // 날짜 클릭 이벤트
+    calGrid.querySelectorAll('.schedule-cal-cell[data-date]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const date = cell.dataset.date;
+        this.uiManager.showScheduleModal(null, date);
+      });
+    });
+  }
+
+  // 예정된 일정 렌더링
+  renderUpcomingSchedules() {
+    const container = document.getElementById('upcomingSchedules');
+    if (!container) return;
+    
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const upcomingSchedules = this.schedules
+      .filter(schedule => {
+        const scheduleDate = new Date(schedule.date);
+        return scheduleDate >= today && scheduleDate <= nextWeek;
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    if (upcomingSchedules.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280">예정된 일정이 없습니다</div>';
+      return;
+    }
+    
+    container.innerHTML = upcomingSchedules.map(schedule => {
+      const date = new Date(schedule.date);
+      const dateStr = date.toLocaleDateString('ko-KR', {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short'
+      });
+      
+      return `
+        <div class="upcoming-schedule-item" onclick="window.app.uiManager.showScheduleModal('${schedule.docId || schedule.id}')">
+          <div class="upcoming-schedule-date">${dateStr}</div>
+          <div class="upcoming-schedule-content">
+            <div class="upcoming-schedule-title">${schedule.title}</div>
+            ${schedule.time ? `<div class="upcoming-schedule-time">${schedule.time}</div>` : ''}
+            ${schedule.participants && schedule.participants.length > 0 ? 
+              `<div class="upcoming-schedule-participants">${schedule.participants.join(', ')}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 일정 저장
+  async saveSchedule(scheduleData) {
+    try {
+      await this.storageManager.saveSchedule(scheduleData);
+      // 일정 목록 새로고침
+      this.load();
+    } catch (error) {
+      console.error('일정 저장 오류:', error);
+      throw error;
+    }
+  }
+
+  // 일정 업데이트
+  async updateSchedule(schedule, updates) {
+    try {
+      await this.storageManager.updateSchedule(schedule, updates);
+      // 일정 목록 새로고침
+      this.load();
+    } catch (error) {
+      console.error('일정 업데이트 오류:', error);
+      throw error;
+    }
+  }
+
+  // 일정 삭제
+  async deleteSchedule(schedule) {
+    try {
+      await this.storageManager.deleteSchedule(schedule);
+      // 일정 목록 새로고침
+      this.load();
+    } catch (error) {
+      console.error('일정 삭제 오류:', error);
+      throw error;
+    }
+  }
+
+  // ID로 일정 찾기
+  getScheduleById(id) {
+    return this.schedules.find(s => (s.docId || s.id) === id);
   }
 }
 

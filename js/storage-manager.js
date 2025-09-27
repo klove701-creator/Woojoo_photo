@@ -13,7 +13,8 @@ import {
   updateDoc,
   getDoc,
   setDoc,
-  increment
+  increment,
+  limit
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 export class StorageManager {
@@ -537,6 +538,153 @@ export class StorageManager {
     } catch (error) {
       console.error('로컬 활동 로그 로드 오류:', error);
       return [];
+    }
+  }
+
+  // 일정 저장
+  async saveSchedule(scheduleData) {
+    if (this.firebaseOn && this.db) {
+      return this.saveScheduleToFirebase(scheduleData);
+    } else {
+      return this.saveScheduleToLocal(scheduleData);
+    }
+  }
+
+  // Firebase에 일정 저장
+  async saveScheduleToFirebase(scheduleData) {
+    try {
+      const docRef = await addDoc(collection(this.db, 'family-schedules'), scheduleData);
+      console.log('Firebase에 일정 저장 성공:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('Firebase 일정 저장 오류:', error);
+      throw error;
+    }
+  }
+
+  // 로컬에 일정 저장
+  saveScheduleToLocal(scheduleData) {
+    try {
+      const schedules = JSON.parse(localStorage.getItem('familySchedules') || '[]');
+      schedules.push(scheduleData);
+      localStorage.setItem('familySchedules', JSON.stringify(schedules));
+      console.log('로컬에 일정 저장 성공');
+      return scheduleData.id;
+    } catch (error) {
+      console.error('로컬 일정 저장 오류:', error);
+      throw error;
+    }
+  }
+
+  // 일정 로드
+  async loadSchedules(callback) {
+    if (this.firebaseOn && this.db) {
+      return this.loadSchedulesFromFirebase(callback);
+    } else {
+      return this.loadSchedulesFromLocal(callback);
+    }
+  }
+
+  // Firebase에서 일정 로드
+  loadSchedulesFromFirebase(callback) {
+    const q = query(collection(this.db, 'family-schedules'), orderBy('date', 'asc'));
+
+    const unsub = this.unsubscribers.get('schedules');
+    if (unsub) unsub();
+
+    const unsubscriber = onSnapshot(q, (snapshot) => {
+      const schedules = [];
+      snapshot.forEach((doc) => {
+        schedules.push({ docId: doc.id, ...doc.data() });
+      });
+      callback(schedules, null);
+    }, (error) => {
+      console.error('Firebase 일정 로드 오류:', error);
+      callback([], error);
+    });
+
+    this.unsubscribers.set('schedules', unsubscriber);
+    return unsubscriber;
+  }
+
+  // 로컬에서 일정 로드
+  loadSchedulesFromLocal(callback) {
+    try {
+      const schedules = JSON.parse(localStorage.getItem('familySchedules') || '[]');
+      callback(schedules, null);
+    } catch (error) {
+      console.error('로컬 일정 로드 오류:', error);
+      callback([], error);
+    }
+  }
+
+  // 일정 업데이트
+  async updateSchedule(schedule, updates) {
+    if (this.firebaseOn && this.db && schedule.docId) {
+      return this.updateScheduleInFirebase(schedule, updates);
+    } else {
+      return this.updateScheduleInLocal(schedule, updates);
+    }
+  }
+
+  // Firebase에서 일정 업데이트
+  async updateScheduleInFirebase(schedule, updates) {
+    try {
+      await updateDoc(doc(this.db, 'family-schedules', schedule.docId), updates);
+      console.log('Firebase에서 일정 업데이트 성공');
+    } catch (error) {
+      console.error('Firebase 일정 업데이트 오류:', error);
+      throw error;
+    }
+  }
+
+  // 로컬에서 일정 업데이트
+  updateScheduleInLocal(schedule, updates) {
+    try {
+      const schedules = JSON.parse(localStorage.getItem('familySchedules') || '[]');
+      const index = schedules.findIndex(s => s.id === schedule.id);
+      
+      if (index >= 0) {
+        schedules[index] = { ...schedules[index], ...updates };
+        localStorage.setItem('familySchedules', JSON.stringify(schedules));
+        console.log('로컬에서 일정 업데이트 성공');
+      }
+    } catch (error) {
+      console.error('로컬 일정 업데이트 오류:', error);
+      throw error;
+    }
+  }
+
+  // 일정 삭제
+  async deleteSchedule(schedule) {
+    if (this.firebaseOn && this.db && schedule.docId) {
+      return this.deleteScheduleFromFirebase(schedule);
+    } else {
+      return this.deleteScheduleFromLocal(schedule);
+    }
+  }
+
+  // Firebase에서 일정 삭제
+  async deleteScheduleFromFirebase(schedule) {
+    try {
+      await deleteDoc(doc(this.db, 'family-schedules', schedule.docId));
+      console.log('Firebase에서 일정 삭제 성공');
+    } catch (error) {
+      console.error('Firebase 일정 삭제 오류:', error);
+      throw error;
+    }
+  }
+
+  // 로컬에서 일정 삭제
+  deleteScheduleFromLocal(schedule) {
+    try {
+      const schedules = JSON.parse(localStorage.getItem('familySchedules') || '[]');
+      const filteredSchedules = schedules.filter(s => s.id !== schedule.id);
+      localStorage.setItem('familySchedules', JSON.stringify(filteredSchedules));
+      console.log('로컬에서 일정 삭제 성공');
+    } catch (error) {
+      console.error('로컬 일정 삭제 오류:', error);
+      throw error;
     }
   }
 

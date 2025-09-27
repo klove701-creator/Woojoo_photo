@@ -4,6 +4,7 @@ export class UIManager {
     this.app = app;
     this.currentTab = 'timeline';
     this.currentMonth = new Date();
+    this.scheduleCurrentMonth = new Date(); // 일정 캘린더용
     this.isMultiSelectMode = false;
     this.selectedPhotos = new Set();
     
@@ -19,6 +20,10 @@ export class UIManager {
     this.currentGridDate = null;
     this.dayGridPhotos = [];
     this.pendingFiles = [];
+    
+    // 일정 관련
+    this.currentEditingSchedule = null;
+    
     this.bindEvents();
   }
   // 이벤트 바인딩
@@ -85,6 +90,7 @@ export class UIManager {
     $('#duplicateManagerBtn2')?.addEventListener('click', () => this.showDuplicateManager());
 
     // 활동 로그
+    $('#refreshLogs')?.addEventListener('click', () => this.loadAndDisplayActivityLogs());
     $('#activityLogBtn')?.addEventListener('click', () => this.showActivityLogs());
     $('#familyActivityBtn')?.addEventListener('click', () => this.showActivityLogs());
 
@@ -99,6 +105,9 @@ export class UIManager {
     this.bindCalendarClickEvents();
     // Day Grid 이벤트
     this.bindDayGridEvents();
+    
+    // 일정 관련 이벤트
+    this.bindScheduleEvents();
     
   }
   // 키보드 이벤트
@@ -158,7 +167,7 @@ export class UIManager {
           this.app.modalManager?.next();
         }
       } else if (type === 'tab') {
-        const tabs = ['timeline', 'calendar', 'albums'];
+        const tabs = ['timeline', 'calendar', 'albums', 'schedule'];
         const currentIndex = tabs.indexOf(this.currentTab);
         
         if (deltaX > 0 && currentIndex > 0) {
@@ -217,6 +226,28 @@ export class UIManager {
   // Day Grid 이벤트
   bindDayGridEvents() {
     $('#dayGridBack')?.addEventListener('click', () => this.hideDayGrid());
+  }
+
+  // 일정 관련 이벤트
+  bindScheduleEvents() {
+    // 일정 추가 버튼
+    $('#addScheduleBtn')?.addEventListener('click', () => this.showScheduleModal());
+    
+    // 일정 캘린더 네비게이션
+    $('#schedulePrevM')?.addEventListener('click', () => this.navigateScheduleMonth(-1));
+    $('#scheduleNextM')?.addEventListener('click', () => this.navigateScheduleMonth(1));
+    
+    // 일정 모달 관련
+    $('#closeScheduleModal')?.addEventListener('click', () => this.hideScheduleModal());
+    $('#scheduleForm')?.addEventListener('submit', (e) => this.handleScheduleSubmit(e));
+    $('#deleteScheduleBtn')?.addEventListener('click', () => this.handleScheduleDelete());
+    
+    // 모달 외부 클릭 시 닫기
+    $('#scheduleModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'scheduleModal') {
+        this.hideScheduleModal();
+      }
+    });
   }
      // 업로드 미리보기 표시
   showUploadPreview(files) {
@@ -364,7 +395,7 @@ export class UIManager {
   }
   // 탭 전환
   showTab(tab) {
-    const tabs = ['timeline', 'calendar', 'albums'];
+    const tabs = ['timeline', 'calendar', 'albums', 'schedule'];
     const currentIndex = tabs.indexOf(this.currentTab);
     const newIndex = tabs.indexOf(tab);
     
@@ -397,6 +428,7 @@ export class UIManager {
     // 특정 탭 렌더링
     if (tab === 'calendar') this.app.renderCalendar();
     if (tab === 'albums') this.app.renderAlbumPhotos();
+    if (tab === 'schedule') this.app.renderSchedule();
   }
   // 테마 적용
   applyTheme(theme) {
@@ -1044,6 +1076,46 @@ export class UIManager {
     }
   }
 
+  // 설정창에서 접속 로그 로드 및 표시
+  async loadAndDisplayActivityLogs() {
+    const logs = await this.app.storageManager.loadActivityLogs();
+    const container = $('#activityLogsList');
+    
+    if (!container) return;
+    
+    // 최근 10개의 로그만 표시
+    const recentLogs = logs.slice(0, 10);
+    
+    if (recentLogs.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:16px; color:#6b7280">접속 로그가 없습니다</div>';
+      return;
+    }
+    
+    container.innerHTML = recentLogs.map(log => {
+      const actionText = {
+        'login': '로그인',
+        'upload': '사진 업로드', 
+        'comment': '댓글 작성',
+        'logout': '로그아웃'
+      }[log.action] || log.action;
+      
+      const date = new Date(log.timestamp);
+      const timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString('ko-KR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      
+      return `
+        <div style="border-bottom:1px solid #e5e7eb; padding:8px 0; font-size:12px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span><strong>${log.user}</strong> ${actionText}</span>
+            <span style="color:#6b7280">${timeStr}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   // 활동 로그 표시
   async showActivityLogs() {
     const logs = await this.app.storageManager.loadActivityLogs();
@@ -1129,6 +1201,141 @@ export class UIManager {
     modal.classList.add('show');
     $('#closeActivityLog').onclick = () => modal.classList.remove('show');
   }
+  // 일정 캘린더 월 네비게이션
+  navigateScheduleMonth(direction) {
+    this.scheduleCurrentMonth.setMonth(this.scheduleCurrentMonth.getMonth() + direction);
+    this.app.renderScheduleCalendar();
+  }
+
+  // 일정 모달 표시
+  showScheduleModal(scheduleId = null, defaultDate = null) {
+    const modal = $('#scheduleModal');
+    const form = $('#scheduleForm');
+    const title = $('#scheduleModalTitle');
+    const deleteBtn = $('#deleteScheduleBtn');
+    
+    if (!modal || !form) return;
+    
+    this.currentEditingSchedule = scheduleId ? this.app.getScheduleById(scheduleId) : null;
+    
+    // 폼 초기화
+    form.reset();
+    
+    if (this.currentEditingSchedule) {
+      // 수정 모드
+      title.textContent = '일정 수정';
+      deleteBtn.style.display = 'block';
+      
+      // 기존 데이터 채우기
+      $('#scheduleTitle').value = this.currentEditingSchedule.title || '';
+      $('#scheduleDate').value = this.currentEditingSchedule.date || '';
+      $('#scheduleTime').value = this.currentEditingSchedule.time || '';
+      $('#scheduleMemo').value = this.currentEditingSchedule.memo || '';
+      
+      // 참여자 체크박스 설정
+      this.renderParticipantsSelector(this.currentEditingSchedule.participants || []);
+    } else {
+      // 추가 모드
+      title.textContent = '일정 추가';
+      deleteBtn.style.display = 'none';
+      
+      // 기본 날짜 설정
+      if (defaultDate) {
+        $('#scheduleDate').value = defaultDate;
+      }
+      
+      this.renderParticipantsSelector();
+    }
+    
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // 참여자 선택기 렌더링
+  renderParticipantsSelector(selectedParticipants = []) {
+    const container = $('#scheduleParticipants');
+    if (!container) return;
+    
+    const members = this.app.config.members || [];
+    
+    container.innerHTML = members.map(member => `
+      <label class="participant-checkbox">
+        <input type="checkbox" value="${member}" ${selectedParticipants.includes(member) ? 'checked' : ''}>
+        <span>${member}</span>
+      </label>
+    `).join('');
+  }
+
+  // 일정 모달 숨기기
+  hideScheduleModal() {
+    const modal = $('#scheduleModal');
+    if (!modal) return;
+    
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+    this.currentEditingSchedule = null;
+  }
+
+  // 일정 폼 제출 처리
+  async handleScheduleSubmit(e) {
+    e.preventDefault();
+    
+    const title = $('#scheduleTitle').value.trim();
+    const date = $('#scheduleDate').value;
+    const time = $('#scheduleTime').value;
+    const memo = $('#scheduleMemo').value.trim();
+    
+    if (!title || !date) {
+      alert('제목과 날짜는 필수입니다.');
+      return;
+    }
+    
+    // 참여자 수집
+    const participants = Array.from($$('#scheduleParticipants input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+    
+    const scheduleData = {
+      title,
+      date,
+      time,
+      memo,
+      participants,
+      createdBy: this.app.currentUser,
+      createdAt: Date.now()
+    };
+    
+    try {
+      if (this.currentEditingSchedule) {
+        // 수정
+        await this.app.updateSchedule(this.currentEditingSchedule, scheduleData);
+      } else {
+        // 추가
+        scheduleData.id = Date.now().toString();
+        await this.app.saveSchedule(scheduleData);
+      }
+      
+      this.hideScheduleModal();
+      alert(this.currentEditingSchedule ? '일정이 수정되었습니다.' : '일정이 추가되었습니다.');
+    } catch (error) {
+      alert('일정 저장 중 오류가 발생했습니다: ' + error.message);
+    }
+  }
+
+  // 일정 삭제 처리
+  async handleScheduleDelete() {
+    if (!this.currentEditingSchedule) return;
+    
+    if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+    
+    try {
+      await this.app.deleteSchedule(this.currentEditingSchedule);
+      this.hideScheduleModal();
+      alert('일정이 삭제되었습니다.');
+    } catch (error) {
+      alert('일정 삭제 중 오류가 발생했습니다: ' + error.message);
+    }
+  }
+
   // 주간 표시
   getWeekday(dateString) {
     const days = ['일', '월', '화', '수', '목', '금', '토'];

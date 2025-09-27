@@ -48,6 +48,251 @@ body{
   background:var(--bg); 
   color:var(--text);
   transition: background 0.3s ease;
+
+/* 일정 관련 스타일 */
+.schedule-manager {
+  max-width: 100%;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 16px;
+}
+
+.schedule-calendar {
+  margin-bottom: 24px;
+}
+
+.schedule-cal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 16px;
+}
+
+.schedule-cal-grid {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.schedule-cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 8px;
+}
+
+.schedule-cal-day-header {
+  padding: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.schedule-cal-body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.schedule-cal-cell {
+  min-height: 80px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.schedule-cal-cell:hover:not(.empty) {
+  background: var(--p-light);
+  opacity: 0.1;
+}
+
+.schedule-cal-cell.empty {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.schedule-cal-date {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.schedule-cal-events {
+  font-size: 10px;
+}
+
+.schedule-cal-event {
+  background: var(--p);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin-bottom: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-cal-more {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.schedule-list {
+  padding: 0 16px;
+}
+
+.upcoming-schedule-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: var(--card);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.upcoming-schedule-item:hover {
+  transform: translateY(-1px);
+}
+
+.upcoming-schedule-date {
+  min-width: 80px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.upcoming-schedule-content {
+  flex: 1;
+}
+
+.upcoming-schedule-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.upcoming-schedule-time {
+  font-size: 12px;
+  color: var(--p);
+  margin-bottom: 2px;
+}
+
+.upcoming-schedule-participants {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* 일정 모달 스타일 */
+.schedule-modal-content {
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.schedule-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.schedule-modal-header h3 {
+  margin: 0;
+  color: var(--text);
+}
+
+.schedule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--p);
+}
+
+.participants-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.participant-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.participant-checkbox:hover {
+  background: var(--p-light);
+  border-color: var(--p);
+}
+
+.participant-checkbox input[type="checkbox"] {
+  margin: 0;
+}
+
+.participant-checkbox input[type="checkbox"]:checked + span {
+  color: var(--p);
+  font-weight: 600;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.form-actions button {
+  flex: 1;
+}
   touch-action: pan-y pinch-zoom;
 }
 
