@@ -360,4 +360,58 @@ async uploadToCloudinary(file, targetDate) {
     return badges;
   }
 
+  // 중복 사진 찾기
+  findDuplicatePhotos(photos) {
+    const duplicates = [];
+    const photoMap = new Map();
+    
+    // 파일명과 크기로 그룹화
+    photos.forEach(photo => {
+      const fileName = this.getFileNameFromUrl(photo.url);
+      const fileSize = photo.fileSize || photo.bytes || 0;
+      const key = `${fileName}_${fileSize}`;
+      
+      if (photoMap.has(key)) {
+        const existing = photoMap.get(key);
+        duplicates.push({
+          fileName: fileName,
+          fileSize: fileSize,
+          original: existing,
+          duplicate: photo
+        });
+      } else {
+        photoMap.set(key, photo);
+      }
+    });
+    
+    return duplicates;
+  }
+
+  // URL에서 파일명 추출
+  getFileNameFromUrl(url) {
+    try {
+      // Cloudinary URL에서 파일명 추출
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      const fileWithExt = pathParts[pathParts.length - 1];
+      
+      // 확장자 제거하고 파일명만 반환
+      const dotIndex = fileWithExt.lastIndexOf('.');
+      return dotIndex > 0 ? fileWithExt.substring(0, dotIndex) : fileWithExt;
+    } catch (e) {
+      return 'unknown';
+    }
+  }
+
+  // 파일 크기 포맷팅
+  formatFileSize(bytes) {
+    if (!bytes) return '0 B';
+    
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = (bytes / Math.pow(1024, i)).toFixed(1);
+    
+    return `${size} ${sizes[i]}`;
+  }
+
 }
