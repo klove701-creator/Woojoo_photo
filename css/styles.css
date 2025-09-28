@@ -833,13 +833,12 @@ body{
   object-fit:cover;
 }
 .cell .d{
-  font-weight:700; 
-  font-size:14px; 
+  font-weight:300;
+  font-size:14px;
   color:var(--text);
   z-index:1;
-  background:rgba(255,255,255,0.9);
-  padding:2px 6px;
-  border-radius:6px;
+  background:transparent;
+  padding:0;
 }
 .cell.empty .d{
   color:var(--muted);
@@ -850,8 +849,10 @@ body{
   top:4px;
   left:4px;
   color:#fff;
-  background:rgba(0,0,0,0.7);
+  background:transparent;
   font-size:10px;
+  font-weight:400;
+  text-shadow:0 1px 2px rgba(0,0,0,0.8);
 }
 .cell .upload-icon{
   font-size:20px;
@@ -935,20 +936,22 @@ body{
   flex-direction:column;
   gap:1px;
 }
+.day-date-single{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .day-dday{
   font-weight:700;
   font-size:14px;
   color:white;
 }
+
 .day-actual-date{
-  font-size:12px;
-  opacity:0.8;
-  color:rgba(255,255,255,0.7);
-}
-.day-count{
-  margin-left:auto;
+  font-weight:300;
   font-size:13px;
-  opacity:0.9;
+  color:rgba(255,255,255,0.75);
 }
 
 /* D-Day */

@@ -499,10 +499,11 @@ export class App {
             <div class="day-header-content">
               <span class="day-indicator"></span>
               <div class="day-date-info">
-                <div class="day-dday">${ddayText}</div>
-                <div class="day-actual-date">${date} (${this.uiManager.getWeekday(date)})</div>
+                <div class="day-date-single">
+                  <span class="day-dday">${ddayText}</span>
+                  <span class="day-actual-date">${date} (${this.uiManager.getWeekday(date)})</span>
+                </div>
               </div>
-              <span class="day-count">${dayPhotos.length}장</span>
             </div>
           </div>
           ${albumTags}
