@@ -194,6 +194,64 @@ body{
   color: var(--muted);
 }
 
+/* 오늘의 일정 스타일 */
+.today-schedule-item {
+  background: linear-gradient(135deg, var(--p-light), var(--p));
+  color: white;
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+.today-schedule-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.today-schedule-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.today-schedule-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.today-schedule-time {
+  font-size: 14px;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.today-schedule-participants {
+  font-size: 13px;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.today-schedule-memo {
+  font-size: 12px;
+  opacity: 0.7;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 8px;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
 /* 일정 모달 스타일 */
 .schedule-modal-content {
   width: 100%;

@@ -690,13 +690,17 @@ export class App {
   renderSchedule() {
     const calGrid = document.getElementById('scheduleCalGrid');
     const calTitle = document.getElementById('scheduleCalTitle');
+    const todayList = document.getElementById('todaySchedules');
     const upcomingList = document.getElementById('upcomingSchedules');
-    
-    if (!calGrid || !calTitle || !upcomingList) return;
-    
+
+    if (!calGrid || !calTitle || !todayList || !upcomingList) return;
+
     // 캘린더 렌더링
     this.renderScheduleCalendar();
-    
+
+    // 오늘의 일정 렌더링
+    this.renderTodaySchedules();
+
     // 예정된 일정 렌더링
     this.renderUpcomingSchedules();
   }
@@ -764,26 +768,64 @@ export class App {
     });
   }
 
-  // 예정된 일정 렌더링
+  // 오늘의 일정 렌더링
+  renderTodaySchedules() {
+    const container = document.getElementById('todaySchedules');
+    if (!container) return;
+
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+    const todaySchedules = this.schedules
+      .filter(schedule => schedule.date === todayStr)
+      .sort((a, b) => {
+        if (!a.time && !b.time) return 0;
+        if (!a.time) return 1;
+        if (!b.time) return -1;
+        return a.time.localeCompare(b.time);
+      });
+
+    if (todaySchedules.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280">오늘 일정이 없습니다</div>';
+      return;
+    }
+
+    container.innerHTML = todaySchedules.map(schedule => {
+      return `
+        <div class="today-schedule-item" onclick="window.app.uiManager.showScheduleModal('${schedule.docId || schedule.id}')">
+          <div class="today-schedule-content">
+            <div class="today-schedule-title">${schedule.title}</div>
+            ${schedule.time ? `<div class="today-schedule-time">⏰ ${schedule.time}</div>` : '<div class="today-schedule-time">⏰ 시간 미정</div>'}
+            ${schedule.participants && schedule.participants.length > 0 ?
+              `<div class="today-schedule-participants">👥 ${schedule.participants.join(', ')}</div>` : ''}
+            ${schedule.memo ? `<div class="today-schedule-memo">📝 ${schedule.memo}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 예정된 일정 렌더링 (오늘 제외)
   renderUpcomingSchedules() {
     const container = document.getElementById('upcomingSchedules');
     if (!container) return;
-    
+
     const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
+
     const upcomingSchedules = this.schedules
       .filter(schedule => {
         const scheduleDate = new Date(schedule.date);
-        return scheduleDate >= today && scheduleDate <= nextWeek;
+        return schedule.date !== todayStr && scheduleDate > today && scheduleDate <= nextWeek;
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-    
+
     if (upcomingSchedules.length === 0) {
       container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280">예정된 일정이 없습니다</div>';
       return;
     }
-    
+
     container.innerHTML = upcomingSchedules.map(schedule => {
       const date = new Date(schedule.date);
       const dateStr = date.toLocaleDateString('ko-KR', {
@@ -791,14 +833,14 @@ export class App {
         day: 'numeric',
         weekday: 'short'
       });
-      
+
       return `
         <div class="upcoming-schedule-item" onclick="window.app.uiManager.showScheduleModal('${schedule.docId || schedule.id}')">
           <div class="upcoming-schedule-date">${dateStr}</div>
           <div class="upcoming-schedule-content">
             <div class="upcoming-schedule-title">${schedule.title}</div>
             ${schedule.time ? `<div class="upcoming-schedule-time">${schedule.time}</div>` : ''}
-            ${schedule.participants && schedule.participants.length > 0 ? 
+            ${schedule.participants && schedule.participants.length > 0 ?
               `<div class="upcoming-schedule-participants">${schedule.participants.join(', ')}</div>` : ''}
           </div>
         </div>
