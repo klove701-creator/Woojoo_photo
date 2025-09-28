@@ -345,7 +345,7 @@ async uploadToCloudinary(file, targetDate) {
     
     if (isVideo) {
       const duration = this.getVideoDuration(photo);
-      badges += `<div class="video-duration-badge">${duration}</div>`;
+      badges += `<div class="video-duration-badge">▶ ${duration}</div>`;
     }
     
     if (hasComments) {

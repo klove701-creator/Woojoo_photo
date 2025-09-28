@@ -367,15 +367,6 @@
 
   <!-- Day Grid Overlay -->
   <div id="dayGridOverlay" class="day-grid-overlay" aria-hidden="true" tabindex="-1">
-    <div class="day-grid-header">
-      <button id="dayGridBack" class="day-grid-close" aria-label="뒤로">←</button>
-      <div class="day-grid-title" id="dayGridTitle">-</div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button id="dayGridMultiselectBtn" class="day-grid-multiselect-toggle">선택</button>
-        <div id="dayGridCount"></div>
-      </div>
-    </div>
-    
     <!-- Multi-select Header -->
     <div id="dayGridMultiselectHeader" class="day-grid-multiselect-header">
       <div class="day-grid-multiselect-info" id="dayGridMultiselectInfo">0개 선택됨</div>
@@ -385,8 +376,40 @@
         <button id="dayGridCancelMultiselect" class="day-grid-multiselect-btn">✖ 취소</button>
       </div>
     </div>
-    
+
     <div class="day-grid-content">
+      <!-- Splash Image Section -->
+      <div class="day-grid-splash" id="dayGridSplash">
+        <img id="dayGridSplashImage" src="" alt="대표 이미지" />
+
+        <!-- Controls on Splash -->
+        <div class="day-grid-splash-controls">
+          <button id="dayGridBack" class="splash-control-btn" aria-label="뒤로">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 19-7-7 7-7"/>
+              <path d="M19 12H5"/>
+            </svg>
+          </button>
+          <div class="splash-menu-container">
+            <button id="dayGridMenuBtn" class="splash-control-btn" aria-label="메뉴">⋯</button>
+            <div id="dayGridDropdown" class="dropdown-menu hidden">
+              <button class="dropdown-item" id="dropdownAddTag">🏷️ 태그 추가</button>
+              <button class="dropdown-item" id="dropdownSelectAll">☑️ 일괄 선택</button>
+              <button class="dropdown-item" id="dropdownDelete">🗑️ 삭제</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="day-grid-splash-overlay">
+          <div class="day-grid-splash-info">
+            <div class="day-grid-splash-title" id="dayGridSplashTitle">
+              <div class="splash-dday" id="dayGridDday"></div>
+              <div class="splash-date" id="dayGridDate"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="day-grid" id="dayGrid"></div>
     </div>
   </div>

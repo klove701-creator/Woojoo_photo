@@ -885,7 +885,10 @@ export class UIManager {
     
     if (title) title.textContent = date;
     if (count) count.textContent = `${dayPhotos.length}장`;
-    
+
+    // 스플래시 이미지 설정
+    this.setupDayGridSplash(date, dayPhotos);
+
     const shuffledPhotos = shuffle(dayPhotos);
     
     grid.innerHTML = shuffledPhotos.map(photo => {
@@ -916,6 +919,10 @@ export class UIManager {
       document.activeElement.blur();
     }
     if (!overlay) return;
+
+    // 스플래시 슬라이드쇼 정지
+    this.stopSplashSlideshow();
+
     if (direction === 'forward') {
       overlay.classList.add('slide-left');
       overlay.setAttribute('aria-hidden', 'true');
@@ -1036,6 +1043,150 @@ export class UIManager {
     if (this.dayGridMultiSelectMode) {
       grid.classList.add('multiselect-mode');
       this.updateDayGridMultiSelectInfo();
+    }
+  }
+
+  setupDayGridSplash(date, dayPhotos) {
+    const splashImage = $('#dayGridSplashImage');
+    const ddayElement = $('#dayGridDday');
+    const dateElement = $('#dayGridDate');
+
+    if (dayPhotos.length === 0) return;
+
+    // 스플래시 데이터 저장
+    this.currentSplashPhotos = dayPhotos;
+    this.currentSplashIndex = 0;
+
+    // 첫 번째 사진을 스플래시 이미지로 사용
+    if (splashImage) {
+      splashImage.src = preview(dayPhotos[0].url, 800, 400);
+      // 첫 번째 이미지에 페이드 줌 애니메이션 시작
+      setTimeout(() => {
+        splashImage.classList.add('fade-zoom');
+      }, 100);
+    }
+
+    // D-Day와 날짜 설정
+    if (ddayElement && dateElement) {
+      // 타임라인의 calculateDDay 함수 사용
+      const ddayText = this.app.calculateDDay(date);
+
+      ddayElement.textContent = ddayText;
+      dateElement.textContent = new Date(date + 'T00:00:00').toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // 드롭다운 메뉴 이벤트 바인딩
+    this.bindDropdownEvents();
+
+    // 자동 슬라이드쇼 시작 (2초마다)
+    this.startSplashSlideshow();
+  }
+
+  startSplashSlideshow() {
+    // 기존 인터벌 정리
+    if (this.splashInterval) {
+      clearInterval(this.splashInterval);
+    }
+
+    // 사진이 2장 이상일 때만 슬라이드쇼 실행
+    if (this.currentSplashPhotos && this.currentSplashPhotos.length > 1) {
+      this.splashInterval = setInterval(() => {
+        this.changeSplashImage();
+      }, 7000); // 7초마다 변경
+    }
+  }
+
+  changeSplashImage() {
+    const splashImage = $('#dayGridSplashImage');
+    if (!splashImage || !this.currentSplashPhotos) return;
+
+    // 다음 이미지 인덱스 계산
+    this.currentSplashIndex = (this.currentSplashIndex + 1) % this.currentSplashPhotos.length;
+    const nextPhoto = this.currentSplashPhotos[this.currentSplashIndex];
+
+    // 현재 이미지에서 페이드 줌 제거하고 디졸브 시작
+    splashImage.classList.remove('fade-zoom');
+    splashImage.classList.add('fade-out');
+
+    // 0.8초 후에 이미지 변경하고 새 이미지에 페이드 줌 시작
+    setTimeout(() => {
+      splashImage.src = preview(nextPhoto.url, 800, 400);
+      splashImage.classList.remove('fade-out');
+
+      // 새 이미지가 로드된 후 페이드 줌 애니메이션 시작
+      setTimeout(() => {
+        splashImage.classList.add('fade-zoom');
+      }, 100);
+    }, 800);
+  }
+
+  stopSplashSlideshow() {
+    if (this.splashInterval) {
+      clearInterval(this.splashInterval);
+      this.splashInterval = null;
+    }
+
+    // 애니메이션 클래스 정리
+    const splashImage = $('#dayGridSplashImage');
+    if (splashImage) {
+      splashImage.classList.remove('fade-zoom', 'fade-out');
+    }
+  }
+
+  bindDropdownEvents() {
+    const menuBtn = $('#dayGridMenuBtn');
+    const dropdown = $('#dayGridDropdown');
+    const backBtn = $('#dayGridBack');
+
+    // 뒤로 가기 버튼
+    if (backBtn) {
+      backBtn.onclick = () => this.hideDayGrid();
+    }
+
+    // 드롭다운 토글
+    if (menuBtn && dropdown) {
+      menuBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+      };
+
+      // 외부 클릭 시 드롭다운 닫기
+      document.addEventListener('click', (e) => {
+        if (!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
+      });
+    }
+
+    // 드롭다운 아이템들
+    $('#dropdownAddTag')?.addEventListener('click', () => {
+      $('#dayGridDropdown')?.classList.add('hidden');
+      this.showAddTagDialog();
+    });
+
+    $('#dropdownSelectAll')?.addEventListener('click', () => {
+      $('#dayGridDropdown')?.classList.add('hidden');
+      this.toggleDayGridMultiSelectMode();
+    });
+
+    $('#dropdownDelete')?.addEventListener('click', () => {
+      $('#dayGridDropdown')?.classList.add('hidden');
+      this.showDeleteAllDialog();
+    });
+  }
+
+  showAddTagDialog() {
+    alert('태그 추가 기능은 아직 구현되지 않았습니다.');
+  }
+
+  showDeleteAllDialog() {
+    if (confirm('이 날의 모든 사진을 삭제하시겠습니까?')) {
+      // TODO: 전체 삭제 로직 구현
+      alert('전체 삭제 기능은 아직 구현되지 않았습니다.');
     }
   }
 
