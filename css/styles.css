@@ -779,7 +779,7 @@ body{
 /* Calendar */
 .cal{
   background:var(--card);
-  border-radius:20px;
+  border-radius:7px;
   padding:10px;
   box-shadow:var(--shadow);
   border:1px solid var(--border);
@@ -806,12 +806,12 @@ body{
 .grid{
   display:grid;
   grid-template-columns:repeat(7,1fr);
-  gap:4px;
+  gap:2px;
 }
 .cell{
   position:relative;
   aspect-ratio:1/1;
-  border-radius:12px;
+  border-radius:4px;
   overflow:hidden;
   background:#f8fafc;
   transition:all 0.2s ease;
@@ -1545,7 +1545,7 @@ input:focus, select:focus{
 .day-grid{
   display:grid;
   grid-template-columns:repeat(4, 1fr);
-  gap:1px;
+  gap:0.5px;
   background:var(--border);
 }
 .day-grid .cell{
