@@ -780,15 +780,23 @@ export class UIManager {
     }
   }
   async moveSelectedToAlbum() {
-    if (this.selectedPhotos.size === 0) return;
-    
-    const albumCheckboxes = this.app.config.albums.map(album => 
+    if (this.selectedPhotos.size === 0) {
+      alert('사진을 먼저 선택해주세요.');
+      return;
+    }
+
+    if (this.app.config.albums.length === 0) {
+      alert('앨범이 없습니다. 설정에서 앨범을 먼저 추가해주세요.');
+      return;
+    }
+
+    const albumCheckboxes = this.app.config.albums.map(album =>
       `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer;">
          <input type="checkbox" value="${album}">
          <span>${album}</span>
        </label>`
     ).join('');
-    
+
     const modalHtml = `
       <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:9999;" id="albumSelectModal">
         <div style="background:white; padding:24px; border-radius:16px; max-width:400px; width:90%;">
@@ -802,32 +810,42 @@ export class UIManager {
         </div>
       </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    $('#cancelAlbumSelect').onclick = () => {
-      $('#albumSelectModal')?.remove();
-    };
-    
-    $('#confirmAlbumSelect').onclick = async () => {
-      const checkboxes = $$('#albumCheckboxContainer input[type="checkbox"]:checked');
-      const selectedAlbums = checkboxes.map(cb => cb.value);
-      
-      if (selectedAlbums.length === 0) {
-        alert('앨범을 선택해주세요.');
-        return;
-      }
-      
-      try {
-        await this.app.movePhotosToAlbums(Array.from(this.selectedPhotos), selectedAlbums);
-        alert(`${this.selectedPhotos.size}개 사진이 선택한 앨범에 추가되었습니다.`);
-        $('#albumSelectModal')?.remove();
-        this.exitMultiSelectMode();
-        this.app.renderCurrentView();
-      } catch (e) {
-        alert('앨범 이동 중 오류가 발생했습니다: ' + e.message);
-      }
-    };
+
+    const cancelBtn = $('#cancelAlbumSelect');
+    const confirmBtn = $('#confirmAlbumSelect');
+
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        const modal = $('#albumSelectModal');
+        if (modal) modal.remove();
+      };
+    }
+
+    if (confirmBtn) {
+      confirmBtn.onclick = async () => {
+        const checkboxes = $$('#albumCheckboxContainer input[type="checkbox"]:checked');
+        const selectedAlbums = Array.from(checkboxes).map(cb => cb.value);
+
+        if (selectedAlbums.length === 0) {
+          alert('앨범을 선택해주세요.');
+          return;
+        }
+
+        try {
+          await this.app.movePhotosToAlbums(Array.from(this.selectedPhotos), selectedAlbums);
+          alert(`${this.selectedPhotos.size}개 사진이 선택한 앨범에 추가되었습니다.`);
+          const modal = $('#albumSelectModal');
+          if (modal) modal.remove();
+          this.exitMultiSelectMode();
+          this.app.renderCurrentView();
+        } catch (e) {
+          console.error('앨범 이동 오류:', e);
+          alert('앨범 이동 중 오류가 발생했습니다: ' + e.message);
+        }
+      };
+    }
   }
   async deleteSelectedPhotos() {
     if (this.selectedPhotos.size === 0) return;
@@ -992,7 +1010,15 @@ export class UIManager {
   }
 
   async moveDayGridSelectedToAlbum() {
-    if (this.dayGridSelectedPhotos.size === 0) return;
+    if (this.dayGridSelectedPhotos.size === 0) {
+      alert('사진을 먼저 선택해주세요.');
+      return;
+    }
+
+    if (this.app.config.albums.length === 0) {
+      alert('앨범이 없습니다. 설정에서 앨범을 먼저 추가해주세요.');
+      return;
+    }
 
     const albumCheckboxes = this.app.config.albums.map(album =>
       `<label style="display:flex; align-items:center; gap:8px; padding:8px; cursor:pointer;">
@@ -1017,29 +1043,39 @@ export class UIManager {
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    $('#cancelDayGridAlbumSelect').onclick = () => {
-      $('#dayGridAlbumSelectModal')?.remove();
-    };
+    const cancelBtn = $('#cancelDayGridAlbumSelect');
+    const confirmBtn = $('#confirmDayGridAlbumSelect');
 
-    $('#confirmDayGridAlbumSelect').onclick = async () => {
-      const checkboxes = $$('#dayGridAlbumCheckboxContainer input[type="checkbox"]:checked');
-      const selectedAlbums = checkboxes.map(cb => cb.value);
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        const modal = $('#dayGridAlbumSelectModal');
+        if (modal) modal.remove();
+      };
+    }
 
-      if (selectedAlbums.length === 0) {
-        alert('앨범을 선택해주세요.');
-        return;
-      }
+    if (confirmBtn) {
+      confirmBtn.onclick = async () => {
+        const checkboxes = $$('#dayGridAlbumCheckboxContainer input[type="checkbox"]:checked');
+        const selectedAlbums = Array.from(checkboxes).map(cb => cb.value);
 
-      try {
-        await this.app.movePhotosToAlbums(Array.from(this.dayGridSelectedPhotos), selectedAlbums);
-        alert(`${this.dayGridSelectedPhotos.size}개 사진이 선택한 앨범에 추가되었습니다.`);
-        $('#dayGridAlbumSelectModal')?.remove();
-        this.exitDayGridMultiSelect();
-        this.app.renderCurrentView();
-      } catch (e) {
-        alert('앨범 이동 중 오류가 발생했습니다: ' + e.message);
-      }
-    };
+        if (selectedAlbums.length === 0) {
+          alert('앨범을 선택해주세요.');
+          return;
+        }
+
+        try {
+          await this.app.movePhotosToAlbums(Array.from(this.dayGridSelectedPhotos), selectedAlbums);
+          alert(`${this.dayGridSelectedPhotos.size}개 사진이 선택한 앨범에 추가되었습니다.`);
+          const modal = $('#dayGridAlbumSelectModal');
+          if (modal) modal.remove();
+          this.exitDayGridMultiSelect();
+          this.app.renderCurrentView();
+        } catch (e) {
+          console.error('Day Grid 앨범 이동 오류:', e);
+          alert('앨범 이동 중 오류가 발생했습니다: ' + e.message);
+        }
+      };
+    }
   }
 
   async deleteDayGridSelectedPhotos() {
