@@ -423,14 +423,71 @@ export class App {
       const albumTags = allAlbums.size > 0 ? 
         `<div class="album-tags">${Array.from(allAlbums).map(album => `<span class="album-tag">${album}</span>`).join('')}</div>` : '';
       
-      // 타일들 생성
-      const tiles = extra.map(photo => {
+      // 타일들 생성 (최대 2개만)
+      const tiles = extra.slice(0, 2).map((photo, index) => {
         const badges = this.photoManager.generateBadges(photo);
         const photoId = photo.id || photo.public_id || photo.url;
-        
+
+        // 두 번째 타일(오른쪽 하단)에 오버레이 추가
+        let overlay = '';
+        if (index === 1 && remaining > 0) {
+          // 동영상 감지 함수
+          const isVideo = (item) => {
+            // resource_type으로 감지
+            if (item.resource_type === 'video') return true;
+
+            // URL에서 동영상 확장자 감지 (더 정확한 패턴)
+            const url = item.url || item.secure_url || '';
+            const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v', '.3gp', '.flv', '.wmv'];
+
+            // URL 끝부분이나 쿼리 파라미터 전까지 확인
+            const urlWithoutQuery = url.split('?')[0];
+            if (videoExtensions.some(ext => urlWithoutQuery.toLowerCase().endsWith(ext))) return true;
+
+            // Cloudinary URL에서 /video/ 패턴 감지
+            if (url.includes('/video/')) return true;
+
+            // MIME 타입으로 감지
+            if (item.format && ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'].includes(item.format.toLowerCase())) return true;
+
+            // 추가 속성들 확인
+            if (item.type === 'video' || item.mediaType === 'video') return true;
+
+            // 파일명에서 확장자 추출
+            const filename = item.original_filename || item.public_id || '';
+            if (videoExtensions.some(ext => filename.toLowerCase().includes(ext))) return true;
+
+            return false;
+          };
+
+          // 남은 사진과 동영상 개수 계산
+          const remainingPhotos = dayPhotos.filter(p => !isVideo(p));
+          const remainingVideos = dayPhotos.filter(p => isVideo(p));
+
+          // 이미 표시된 3개 (hero + 2개 타일) 제외
+          const photoCount = Math.max(0, remainingPhotos.length - 3);
+          const videoCount = remainingVideos.length;
+
+          let overlayText = '';
+          if (photoCount > 0 && videoCount > 0) {
+            overlayText = `${photoCount}개의 사진+${videoCount}개의 동영상`;
+          } else if (photoCount > 0) {
+            overlayText = `${photoCount}개의 사진`;
+          } else if (videoCount > 0) {
+            overlayText = `${videoCount}개의 동영상`;
+          }
+
+          if (overlayText) {
+            overlay = `<div class="photo-overlay">
+                         <div class="overlay-text">${overlayText}</div>
+                       </div>`;
+          }
+        }
+
         return `<div class="tile open-grid" data-date="${date}" data-id="${photoId}">
           <img src="${preview(photo.url, 300, 300)}" alt="thumb"/>
           ${badges}
+          ${overlay}
         </div>`;
       }).join('');
       
@@ -456,11 +513,6 @@ export class App {
             </div>
             <div class="tile-grid">
               ${tiles}
-              ${remaining > 0 ? 
-                `<div class="tile more-tile open-grid" data-date="${date}" 
-                     style="display:flex;align-items:center;justify-content:center;background:var(--p);color:white;font-weight:700;font-size:18px">
-                   +${remaining}
-                 </div>` : ''}
             </div>
           </div>
         </div>
@@ -494,24 +546,21 @@ export class App {
 
     if (targetDate >= baseDate) {
       // 아기 개월수 계산
-      const adjustedBase = new Date(baseDate);
-      adjustedBase.setDate(baseDate.getDate() + 1);
-      
-      let years = targetDate.getFullYear() - adjustedBase.getFullYear();
-      let months = targetDate.getMonth() - adjustedBase.getMonth();
-      let days = targetDate.getDate() - adjustedBase.getDate();
-      
+      let years = targetDate.getFullYear() - baseDate.getFullYear();
+      let months = targetDate.getMonth() - baseDate.getMonth();
+      let days = targetDate.getDate() - baseDate.getDate() + 1; // 하루 추가
+
       if (days < 0) {
         months--;
         const prevMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 0);
         days += prevMonth.getDate();
       }
-      
+
       if (months < 0) {
         years--;
         months += 12;
       }
-      
+
       const totalMonths = years * 12 + months;
       return totalMonths > 0 ? `${totalMonths}개월 ${days}일` : `${days}일`;
     } else {
