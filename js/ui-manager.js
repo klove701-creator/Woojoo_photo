@@ -32,8 +32,7 @@ export class UIManager {
     $('#save')?.addEventListener('click', () => this.app.saveConfig(true));
     $('#skip')?.addEventListener('click', () => this.app.saveConfig(false));
     $('#openSetup')?.addEventListener('click', () => this.toggleSetup());
-    // 인증 관련
-    $('#logout')?.addEventListener('click', () => this.app.logout());
+    // 인증 관련 (로그아웃 버튼 제거됨)
     // 탭 관련
     $$('.tab').forEach(tab => {
       tab.addEventListener('click', (e) => this.showTab(e.target.dataset.tab));
