@@ -596,10 +596,10 @@ body{
 .day-content{
   padding:4px;
   display:flex;
-  gap:4px;
+  gap:2px;
 }
 .hero-tile{
-  flex:0 0 66.67%; /* 2:1 비율로 변경 (전체의 2/3) */
+  flex:0 0 53%; /* 가로 길이 1/5 축소 */
   position:relative;
   border-radius:5px;
   overflow:hidden;
@@ -621,7 +621,7 @@ body{
   background:#e5e7eb;
   border-radius:5px;
   overflow:hidden;
-  aspect-ratio:1/1;
+  aspect-ratio:1.13/1; /* 세로 비율 조정하여 높이 맞춤 */
   cursor:pointer;
   transition:transform 0.2s ease;
 }
@@ -643,7 +643,7 @@ body{
 
 .overlay-text {
   color: white;
-  font-size: 9px;
+  font-size: 14px;
   font-weight: 700;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
   white-space: nowrap;
@@ -801,7 +801,7 @@ body{
 .grid{
   display:grid;
   grid-template-columns:repeat(7,1fr);
-  gap:2px;
+  gap:0.5px;
 }
 .cell{
   position:relative;
