@@ -194,11 +194,7 @@ export class App {
 
     // 접속 로그 저장 (자동 로그인 포함)
     if (this.currentUser) {
-      this.storageManager.saveActivityLog('access', {
-        user: this.currentUser,
-        timestamp: Date.now(),
-        type: 'auto_access'
-      }).catch(e => console.warn('접속 로그 저장 실패:', e));
+      this.saveAccessLogWithCooldown();
     }
 
     this.load();
@@ -231,6 +227,26 @@ export class App {
     localStorage.removeItem('currentUser');
     this.photoManager.setCurrentUser(null);
     this.showLogin();
+  }
+
+  // 접속 로그 저장 (5분 쿨다운)
+  saveAccessLogWithCooldown() {
+    const COOLDOWN_TIME = 5 * 60 * 1000; // 5분
+    const lastAccessKey = `lastAccess_${this.currentUser}`;
+    const lastAccessTime = localStorage.getItem(lastAccessKey);
+    const now = Date.now();
+
+    // 마지막 접속 시간이 없거나 5분이 지났으면 로그 저장
+    if (!lastAccessTime || (now - parseInt(lastAccessTime)) > COOLDOWN_TIME) {
+      this.storageManager.saveActivityLog('접속', {
+        user: this.currentUser,
+        timestamp: now,
+        type: 'auto_access'
+      }).catch(e => console.warn('접속 로그 저장 실패:', e));
+
+      // 마지막 접속 시간 저장
+      localStorage.setItem(lastAccessKey, now.toString());
+    }
   }
 
   // 온라인/오프라인 모드 전환

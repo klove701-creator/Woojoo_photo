@@ -869,8 +869,17 @@ export class UIManager {
     
     if (!overlay || !grid) return;
     this.currentGridDate = date;
-    this.dayGridMultiSelectMode = false;
-    this.dayGridSelectedPhotos.clear();
+
+    // 기존 선택 상태 백업
+    const previouslySelected = new Set(this.dayGridSelectedPhotos);
+
+    // 다른 날짜로 변경된 경우에만 선택 상태 초기화
+    if (this.lastGridDate !== date) {
+      this.dayGridMultiSelectMode = false;
+      this.dayGridSelectedPhotos.clear();
+    }
+    this.lastGridDate = date;
+
     const dayPhotos = this.app.getPhotosByDate(date);
     this.dayGridPhotos = dayPhotos;
     
@@ -892,6 +901,9 @@ export class UIManager {
     
       // 이벤트 바인딩
       this.bindDayGridCellEvents();
+
+      // 선택 상태 복원
+      this.updateDayGridSelections();
 
       overlay.classList.remove('slide-left', 'slide-right');
       overlay.classList.add('show');
@@ -1006,6 +1018,25 @@ export class UIManager {
 
     if (moveBtn) moveBtn.disabled = count === 0;
     if (deleteBtn) deleteBtn.disabled = count === 0;
+  }
+
+  updateDayGridSelections() {
+    const grid = $('#dayGrid');
+    if (!grid) return;
+
+    // 선택된 사진들의 체크 표시 복원
+    this.dayGridSelectedPhotos.forEach(photoId => {
+      const cell = $(`[data-photo-id="${photoId}"]`, grid);
+      if (cell) {
+        cell.classList.add('selected');
+      }
+    });
+
+    // 다중 선택 모드인 경우 그리드에 클래스 추가
+    if (this.dayGridMultiSelectMode) {
+      grid.classList.add('multiselect-mode');
+      this.updateDayGridMultiSelectInfo();
+    }
   }
 
   async moveDayGridSelectedToAlbum() {
