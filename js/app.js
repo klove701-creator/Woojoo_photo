@@ -191,6 +191,16 @@ export class App {
     document.getElementById('login')?.classList.add('hidden');
     document.getElementById('app')?.classList.remove('hidden');
     document.getElementById('me').textContent = this.currentUser;
+
+    // 접속 로그 저장 (자동 로그인 포함)
+    if (this.currentUser) {
+      this.storageManager.saveActivityLog('access', {
+        user: this.currentUser,
+        timestamp: Date.now(),
+        type: 'auto_access'
+      }).catch(e => console.warn('접속 로그 저장 실패:', e));
+    }
+
     this.load();
   }
 
