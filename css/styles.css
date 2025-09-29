@@ -2254,6 +2254,33 @@ input:focus, select:focus{
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 슬라이드 전환 애니메이션 */
+.modal-slides.slide-next {
+  animation: slideToNext 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+.modal-slides.slide-prev {
+  animation: slideToPrev 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes slideToNext {
+  0% {
+    transform: translateX(-33.333%);
+  }
+  100% {
+    transform: translateX(-66.666%);
+  }
+}
+
+@keyframes slideToPrev {
+  0% {
+    transform: translateX(-33.333%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
 /* Splash Controls */
 .day-grid-splash-controls {
   position: absolute;

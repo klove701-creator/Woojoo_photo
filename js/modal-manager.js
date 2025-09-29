@@ -27,7 +27,7 @@ export class ModalManager {
     this.initModalSlider();
 
     // 현재 사진 설정
-    this.updateCurrentSlide();
+    this.updateSlideContents();
 
     if (dlBtn) dlBtn.href = photo.url;
 
@@ -82,8 +82,8 @@ export class ModalManager {
     this.modalSlides = slides;
   }
 
-  // 현재 슬라이드 업데이트
-  updateCurrentSlide() {
+  // 슬라이드 내용 업데이트 (초기 로드 시에만 사용)
+  updateSlideContents() {
     if (!this.modalSlides) return;
 
     const slides = this.modalSlides.querySelectorAll('.modal-slide');
@@ -126,28 +126,74 @@ export class ModalManager {
 
   prev() {
     if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this.currentPhoto = this.photos[this.currentIndex];
-      this.slideToPhoto('right');
+      this.startSlideTransition('prev');
     }
   }
 
   next() {
     if (this.currentIndex < this.photos.length - 1) {
-      this.currentIndex++;
-      this.currentPhoto = this.photos[this.currentIndex];
-      this.slideToPhoto('left');
+      this.startSlideTransition('next');
     }
   }
 
-  // 슬라이드 애니메이션
-  slideToPhoto(direction) {
+  // 슬라이드 전환 시작
+  startSlideTransition(direction) {
     if (!this.modalSlides) return;
 
-    // 현재 슬라이드 업데이트
-    this.updateCurrentSlide();
+    // 1. 먼저 인덱스 업데이트
+    const nextIndex = direction === 'next' ? this.currentIndex + 1 : this.currentIndex - 1;
+    const nextPhoto = this.photos[nextIndex];
 
-    // 메타데이터 업데이트
+    // 2. 미리 다음 슬라이드 내용 준비
+    this.prepareNextSlides(nextPhoto, nextIndex);
+
+    // 3. 애니메이션 클래스 추가
+    this.modalSlides.classList.add(`slide-${direction}`);
+
+    // 4. 애니메이션 완료 후 정리 작업
+    setTimeout(() => {
+      // 인덱스와 현재 사진 업데이트
+      this.currentIndex = nextIndex;
+      this.currentPhoto = nextPhoto;
+
+      // 애니메이션 클래스 제거
+      this.modalSlides.classList.remove('slide-next', 'slide-prev');
+
+      // 슬라이드 위치 리셋
+      this.modalSlides.style.transform = 'translateX(-33.333%)';
+
+      // 메타데이터 업데이트
+      this.updatePhotoMetadata();
+
+      // Day Grid가 열려있다면 업데이트
+      this.updateDayGridIfOpen();
+
+      // 타임라인 업데이트
+      if (this.app.uiManager?.currentTab === 'timeline') {
+        this.app.renderTimeline();
+      }
+    }, 350);
+  }
+
+  // 다음 슬라이드들 미리 준비
+  prepareNextSlides(nextPhoto, nextIndex) {
+    if (!this.modalSlides) return;
+
+    const slides = this.modalSlides.querySelectorAll('.modal-slide');
+    if (slides.length !== 3) return;
+
+    // 새로운 인덱스 기준으로 이전, 현재, 다음 사진 계산
+    const newPrevIndex = nextIndex > 0 ? nextIndex - 1 : null;
+    const newNextIndex = nextIndex < this.photos.length - 1 ? nextIndex + 1 : null;
+
+    // 각 슬라이드에 새로운 사진 설정
+    this.setSlideContent(slides[0], newPrevIndex !== null ? this.photos[newPrevIndex] : null);
+    this.setSlideContent(slides[1], nextPhoto);
+    this.setSlideContent(slides[2], newNextIndex !== null ? this.photos[newNextIndex] : null);
+  }
+
+  // 사진 메타데이터 업데이트
+  updatePhotoMetadata() {
     const dlBtn = $('#modalDlBtn');
     if (dlBtn) dlBtn.href = this.currentPhoto.url;
 
@@ -155,14 +201,11 @@ export class ModalManager {
     this.loadComments(this.currentPhoto);
     this.updateReactionsUI(this.currentPhoto);
     this.updateModalHeader(this.currentPhoto);
+  }
 
-    // Day Grid가 열려있다면 업데이트
-    this.updateDayGridIfOpen();
-
-    // 타임라인 업데이트
-    if (this.app.uiManager?.currentTab === 'timeline') {
-      this.app.renderTimeline();
-    }
+  // 슬라이드 애니메이션 (기존 호환성을 위해 유지)
+  slideToPhoto(direction) {
+    this.startSlideTransition(direction === 'right' ? 'prev' : 'next');
   }
 
   hideModal() {

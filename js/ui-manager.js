@@ -257,12 +257,12 @@ export class UIManager {
     const threshold = 100; // 스와이프 임계값
 
     this.modalSwipeElement.classList.remove('swiping');
-    this.modalSwipeElement.classList.add('transitioning');
 
     if (velocity > threshold) {
-      // 스와이프 완료 - 다음/이전 사진으로 이동
+      // 스와이프 완료 - 애니메이션을 통해 다음/이전 사진으로 이동
       const direction = deltaX > 0 ? 'prev' : 'next';
 
+      // 모달 매니저의 애니메이션 시스템 사용
       if (direction === 'prev') {
         this.app.modalManager?.prev();
       } else {
@@ -270,6 +270,7 @@ export class UIManager {
       }
     } else {
       // 스와이프 취소 - 원래 위치로 복귀
+      this.modalSwipeElement.classList.add('transitioning');
       this.modalSwipeElement.style.transform = 'translateX(-33.333%)';
     }
 
@@ -280,7 +281,7 @@ export class UIManager {
 
   resetModalSwipe() {
     if (this.modalSwipeElement) {
-      this.modalSwipeElement.classList.remove('swiping', 'transitioning');
+      this.modalSwipeElement.classList.remove('swiping', 'transitioning', 'slide-next', 'slide-prev');
       this.modalSwipeElement.style.transform = 'translateX(-33.333%)';
     }
     this.isModalSwiping = false;
