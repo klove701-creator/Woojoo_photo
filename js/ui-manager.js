@@ -67,7 +67,7 @@ export class UIManager {
     $('#modalBackBtn')?.addEventListener('click', () => this.hideModal());
 
     // 댓글 토글 버튼
-    $('#commentToggleBtn')?.addEventListener('click', () => this.toggleComments());
+    $('#commentToggleBtn')?.addEventListener('click', () => this.showCommentModal());
 
     // 모달 자동 숨김을 위한 이벤트
     this.bindModalAutoHide();
@@ -84,6 +84,16 @@ export class UIManager {
       if (e.key === 'Enter') {
         this.app.modalManager?.submitComment();
         this.hideCommentInput();
+      }
+    });
+
+    // 댓글 모달 관련
+    $('#closeCommentModal')?.addEventListener('click', () => this.hideCommentModal());
+    $('#commentModalOverlay')?.addEventListener('click', () => this.hideCommentModal());
+    $('#commentModalSend')?.addEventListener('click', () => this.submitCommentModal());
+    $('#commentModalInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.submitCommentModal();
       }
     });
     // 멤버 관리
@@ -136,6 +146,13 @@ export class UIManager {
     window.addEventListener('keydown', (e) => {
       const modal = $('#modal');
       if (!modal || !modal.classList.contains('show')) return;
+
+      // 댓글 모드일 때는 키보드 네비게이션 비활성화 (ESC 제외)
+      if (this.commentModeActive) {
+        if (e.key === 'Escape') this.toggleComments();
+        return;
+      }
+
       if (e.key === 'ArrowRight') this.app.modalManager?.next();
       if (e.key === 'ArrowLeft') this.app.modalManager?.prev();
       if (e.key === 'Escape') this.hideModal();
@@ -171,6 +188,9 @@ export class UIManager {
   }
   // 향상된 모달 스와이프 핸들러
   handleModalTouchStart(e) {
+    // 댓글 모드일 때는 스와이프 비활성화
+    if (this.isCommentMode || this.commentModeActive) return;
+
     this.modalSwipeStartX = e.touches[0].clientX;
     this.modalSwipeStartY = e.touches[0].clientY;
     this.modalSwipeCurrentX = this.modalSwipeStartX;
@@ -185,6 +205,8 @@ export class UIManager {
   }
 
   handleModalTouchMove(e) {
+    // 댓글 모드일 때는 스와이프 비활성화
+    if (this.isCommentMode || this.commentModeActive) return;
     if (!this.modalSwipeElement) return;
 
     const currentX = e.touches[0].clientX;
@@ -219,6 +241,12 @@ export class UIManager {
   }
 
   handleModalTouchEnd(e) {
+    // 댓글 모드일 때는 스와이프 비활성화
+    if (this.isCommentMode || this.commentModeActive) {
+      this.resetModalSwipe();
+      return;
+    }
+
     if (!this.isModalSwiping || !this.modalSwipeElement) {
       this.resetModalSwipe();
       return;
@@ -1425,6 +1453,9 @@ export class UIManager {
     modal?.classList.remove('show');
     document.body.style.overflow = 'auto';
 
+    // 댓글 모달도 함께 닫기
+    this.hideCommentModal();
+
     // 자동 숨김 타이머 정리
     this.clearModalAutoHideTimer();
   }
@@ -1448,40 +1479,9 @@ export class UIManager {
     $('#modalDropdown')?.classList.add('hidden');
   }
 
-  // 댓글 창 토글
+  // 댓글 창 토글 (기존 함수는 호환성을 위해 유지하되 새 모달로 리디렉션)
   toggleComments() {
-    const commentsSection = $('#modalComments');
-    const commentInputContainer = $('.comment-input');
-
-    if (!commentsSection) return;
-
-    const isActive = commentsSection.classList.contains('active');
-
-    if (isActive) {
-      // 댓글 창 숨기기
-      commentsSection.classList.remove('active');
-      commentInputContainer?.classList.remove('active');
-      commentsSection.classList.remove('input-active');
-    } else {
-      // 댓글 창 표시
-      commentsSection.classList.add('active');
-
-      // 입력창도 함께 활성화
-      setTimeout(() => {
-        commentInputContainer?.classList.add('active');
-        commentsSection.classList.add('input-active');
-
-        // 입력창 포커스
-        const commentInput = $('#commentInput');
-        if (commentInput) {
-          commentInput.focus();
-          commentInput.placeholder = '댓글을 입력하세요...';
-        }
-      }, 100);
-    }
-
-    // 자동 숨김 재설정
-    this.resetModalAutoHide();
+    this.showCommentModal();
   }
 
   // 댓글 창 숨기기
@@ -1496,6 +1496,132 @@ export class UIManager {
     if (commentsSection) {
       commentsSection.classList.remove('input-active', 'active');
     }
+
+    // 다른 기능들 다시 활성화
+    this.enableModalInteractions();
+  }
+
+  // 댓글 모달 표시
+  showCommentModal() {
+    const modal = $('#commentModal');
+    const commentList = $('#commentModalList');
+
+    if (!modal || !this.app.modalManager?.currentPhoto) return;
+
+    // 모달 드롭다운 메뉴 닫기
+    this.closeModalDropdown();
+
+    // 댓글 로드
+    this.loadCommentsToModal(this.app.modalManager.currentPhoto);
+
+    // 모달 표시
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+
+    // 입력창 포커스
+    setTimeout(() => {
+      const input = $('#commentModalInput');
+      if (input) input.focus();
+    }, 300);
+  }
+
+  // 댓글 모달 숨기기
+  hideCommentModal() {
+    const modal = $('#commentModal');
+    if (!modal) return;
+
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+
+    // 입력창 초기화
+    const input = $('#commentModalInput');
+    if (input) input.value = '';
+  }
+
+  // 댓글 모달에 댓글 로드
+  loadCommentsToModal(photo) {
+    const list = $('#commentModalList');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (this.commentUnsub) {
+      this.commentUnsub();
+      this.commentUnsub = null;
+    }
+
+    this.commentUnsub = this.app.storageManager.loadComments(photo, (comments) => {
+      list.innerHTML = '';
+
+      if (comments.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;">아직 댓글이 없어요<br/>첫 번째 댓글을 남겨보세요!</div>';
+        return;
+      }
+
+      comments.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'comment-item';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'comment-header';
+
+        const userSpan = document.createElement('strong');
+        userSpan.textContent = c.user;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'comment-time';
+        const date = new Date(c.createdAt);
+        timeSpan.textContent = date.toLocaleString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        headerDiv.appendChild(userSpan);
+        headerDiv.appendChild(timeSpan);
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'comment-text';
+        textDiv.textContent = c.text;
+
+        div.appendChild(headerDiv);
+        div.appendChild(textDiv);
+        list.appendChild(div);
+      });
+    });
+  }
+
+  // 댓글 모달에서 댓글 전송
+  submitCommentModal() {
+    const input = $('#commentModalInput');
+    if (!input || !this.app.modalManager?.currentPhoto) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!this.app.currentUser) {
+      alert('사용자를 선택하세요');
+      return;
+    }
+
+    const comment = {
+      user: this.app.currentUser,
+      text,
+      createdAt: Date.now()
+    };
+
+    this.app.storageManager.addComment(this.app.modalManager.currentPhoto, comment);
+
+    // 댓글 작성 활동 로그 저장
+    this.app.storageManager.saveActivityLog('comment', {
+      user: this.app.currentUser,
+      photoId: this.app.modalManager.currentPhoto.id || this.app.modalManager.currentPhoto.public_id || this.app.modalManager.currentPhoto.url,
+      timestamp: Date.now()
+    }).catch(e => console.warn('댓글 활동 로그 저장 실패:', e));
+
+    input.value = '';
   }
 
   // 모달 자동 숨김 기능
@@ -1535,6 +1661,60 @@ export class UIManager {
       clearTimeout(this.modalAutoHideTimer);
       this.modalAutoHideTimer = null;
     }
+  }
+
+  // 모달 인터랙션 비활성화 (댓글창 열렸을 때)
+  disableModalInteractions() {
+    // 네비게이션 버튼들 비활성화
+    const prevBtn = $('#prevBtn');
+    const nextBtn = $('#nextBtn');
+    const modalBackBtn = $('#modalBackBtn');
+    const modalMenuBtn = $('#modalMenuBtn');
+    const reactionBtns = $$('.reaction');
+
+    if (prevBtn) prevBtn.style.pointerEvents = 'none';
+    if (nextBtn) nextBtn.style.pointerEvents = 'none';
+    if (modalBackBtn) modalBackBtn.style.pointerEvents = 'none';
+    if (modalMenuBtn) modalMenuBtn.style.pointerEvents = 'none';
+
+    // 반응 버튼들 비활성화
+    reactionBtns.forEach(btn => {
+      if (!btn.classList.contains('comment-toggle')) {
+        btn.style.pointerEvents = 'none';
+      }
+    });
+
+    // 스와이프 이벤트 비활성화
+    this.isCommentMode = true;
+
+    // 키보드 이벤트 무시를 위한 플래그 설정
+    this.commentModeActive = true;
+  }
+
+  // 모달 인터랙션 활성화 (댓글창 닫혔을 때)
+  enableModalInteractions() {
+    // 네비게이션 버튼들 활성화
+    const prevBtn = $('#prevBtn');
+    const nextBtn = $('#nextBtn');
+    const modalBackBtn = $('#modalBackBtn');
+    const modalMenuBtn = $('#modalMenuBtn');
+    const reactionBtns = $$('.reaction');
+
+    if (prevBtn) prevBtn.style.pointerEvents = 'auto';
+    if (nextBtn) nextBtn.style.pointerEvents = 'auto';
+    if (modalBackBtn) modalBackBtn.style.pointerEvents = 'auto';
+    if (modalMenuBtn) modalMenuBtn.style.pointerEvents = 'auto';
+
+    // 반응 버튼들 활성화
+    reactionBtns.forEach(btn => {
+      btn.style.pointerEvents = 'auto';
+    });
+
+    // 스와이프 이벤트 활성화
+    this.isCommentMode = false;
+
+    // 키보드 이벤트 플래그 해제
+    this.commentModeActive = false;
   }
 
   // 중복 사진 관리

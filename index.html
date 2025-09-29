@@ -415,6 +415,26 @@
     </div>
   </div>
 
+  <!-- Comment Modal -->
+  <div id="commentModal" class="comment-modal" role="dialog" aria-modal="true">
+    <div class="comment-modal-overlay" id="commentModalOverlay"></div>
+    <div class="comment-modal-content">
+      <div class="comment-modal-header">
+        <h3>모든 댓글</h3>
+        <button id="closeCommentModal" class="action-btn">×</button>
+      </div>
+      <div class="comment-modal-body">
+        <div id="commentModalList" class="comment-list" aria-live="polite"></div>
+      </div>
+      <div class="comment-modal-footer">
+        <div class="comment-input-modal">
+          <input id="commentModalInput" type="text" placeholder="댓글 달기..." maxlength="300" />
+          <button id="commentModalSend" class="btn">전송</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Duplicate Photo Modal -->
   <div id="duplicateModal" class="modal" role="dialog" aria-modal="true">
     <div class="panel">
