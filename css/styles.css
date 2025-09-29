@@ -1727,16 +1727,16 @@ input:focus, select:focus{
   top: 0;
   left: 0;
   right: 0;
-  height: calc(80px + constant(safe-area-inset-top));
-  height: calc(80px + env(safe-area-inset-top));
+  height: calc(120px + constant(safe-area-inset-top));
+  height: calc(120px + env(safe-area-inset-top));
   background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 0 20px 12px 20px;
-  /* iOS Safe Area 지원 */
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
+  padding: 0 20px 20px 20px;
+  /* iOS Safe Area 지원 - 추가 여백 */
+  padding-top: calc(20px + constant(safe-area-inset-top));
+  padding-top: calc(20px + env(safe-area-inset-top));
   z-index: 200;
   opacity: 1;
   transition: opacity 0.3s ease;
@@ -2314,13 +2314,17 @@ input:focus, select:focus{
 /* Splash Controls */
 .day-grid-splash-controls {
   position: absolute;
-  top: 16px;
+  top: calc(16px + constant(safe-area-inset-top));
+  top: calc(16px + env(safe-area-inset-top));
   left: 0;
   right: 0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 0 16px;
+  padding: 20px 16px 0 16px;
+  /* iOS Safe Area 지원 */
+  padding-top: calc(20px + constant(safe-area-inset-top));
+  padding-top: calc(20px + env(safe-area-inset-top));
   z-index: 10;
 }
 
