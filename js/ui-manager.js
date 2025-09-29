@@ -539,36 +539,59 @@ export class UIManager {
     const tabs = ['timeline', 'calendar', 'albums', 'schedule'];
     const currentIndex = tabs.indexOf(this.currentTab);
     const newIndex = tabs.indexOf(tab);
-    
+
+    // 다중선택 모드 체크 - 앨범 탭이 아닌 경우 다중선택 모드 해제
+    if (this.currentTab === 'albums' && tab !== 'albums' && this.isMultiSelectMode) {
+      this.exitMultiSelectMode();
+    }
+
     // 탭 버튼 활성화
     $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-    
+
     // 슬라이드 방향 결정
     const isForward = newIndex > currentIndex;
-    
+
     // 현재 활성화된 탭 비활성화
     const currentTabEl = $('.tab-content.active');
     if (currentTabEl) {
       currentTabEl.classList.remove('active');
       currentTabEl.classList.add(isForward ? 'slide-left' : 'slide-right');
-      
+
       setTimeout(() => {
         currentTabEl.classList.remove('slide-left', 'slide-right');
       }, 300);
     }
-    
+
     // 새 탭 활성화
     const newTabEl = $(`#${tab}`);
     if (newTabEl) {
       newTabEl.classList.remove('slide-left', 'slide-right');
       newTabEl.classList.add('active');
     }
-    
+
     this.currentTab = tab;
-    
+
     // 특정 탭 렌더링
     if (tab === 'calendar') this.app.renderCalendar();
-    if (tab === 'albums') this.app.renderAlbumPhotos();
+    if (tab === 'albums') {
+      // 앨범 탭으로 돌아올 때 다중선택 모드가 활성화되어 있었다면 UI 복원
+      this.app.renderAlbumPhotos();
+      if (this.isMultiSelectMode) {
+        // 다중선택 모드 UI 복원
+        const btn = $('#multiselectBtn');
+        const bottomBar = $('#multiselectBottomBar');
+
+        if (btn) {
+          btn.textContent = '선택 취소';
+          btn.classList.add('btn');
+          btn.classList.remove('secondary');
+        }
+
+        if (bottomBar) {
+          bottomBar.classList.add('show');
+        }
+      }
+    }
     if (tab === 'schedule') this.app.renderSchedule();
   }
   // 테마 적용
