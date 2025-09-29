@@ -197,10 +197,10 @@ export class UIManager {
     this.isModalSwiping = false;
     this.modalSwipeDirection = null;
 
-    // 현재 이미지 요소 가져오기
+    // 슬라이더 요소 가져오기
     const viewer = $('#modalViewer');
     if (viewer) {
-      this.modalSwipeElement = viewer.querySelector('#big:not([style*="display: none"]), #bigVideo:not([style*="display: none"])');
+      this.modalSwipeElement = viewer.querySelector('.modal-slides');
     }
   }
 
@@ -223,19 +223,19 @@ export class UIManager {
     if (Math.abs(deltaX) > 10 && !this.isModalSwiping) {
       this.isModalSwiping = true;
       this.modalSwipeDirection = deltaX > 0 ? 'right' : 'left';
+      this.modalSwipeElement.classList.add('swiping');
       e.preventDefault();
     }
 
     if (this.isModalSwiping) {
       e.preventDefault();
 
-      // 실시간 변형 적용
-      const progress = Math.min(Math.abs(deltaX) / 150, 1);
-      const translateX = deltaX * 0.8; // 약간의 저항감
+      // 슬라이더 변형 적용 (-33.333%가 기본 위치)
+      const baseTransform = -33.333;
+      const swipePercent = (deltaX / window.innerWidth) * 33.333;
+      const newTransform = baseTransform + swipePercent;
 
-      this.modalSwipeElement.style.transform = `translateX(${translateX}px)`;
-      this.modalSwipeElement.style.opacity = 1 - (progress * 0.3);
-
+      this.modalSwipeElement.style.transform = `translateX(${newTransform}%)`;
       this.modalSwipeCurrentX = currentX;
     }
   }
@@ -254,46 +254,40 @@ export class UIManager {
 
     const deltaX = this.modalSwipeCurrentX - this.modalSwipeStartX;
     const velocity = Math.abs(deltaX);
-    const threshold = 80; // 스와이프 임계값
+    const threshold = 100; // 스와이프 임계값
+
+    this.modalSwipeElement.classList.remove('swiping');
+    this.modalSwipeElement.classList.add('transitioning');
 
     if (velocity > threshold) {
       // 스와이프 완료 - 다음/이전 사진으로 이동
       const direction = deltaX > 0 ? 'prev' : 'next';
 
-      // 완료 애니메이션
-      this.modalSwipeElement.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-      this.modalSwipeElement.style.transform = `translateX(${deltaX > 0 ? '100%' : '-100%'})`;
-      this.modalSwipeElement.style.opacity = '0';
-
-      setTimeout(() => {
-        if (direction === 'prev') {
-          this.app.modalManager?.prev();
-        } else {
-          this.app.modalManager?.next();
-        }
-        this.resetModalSwipe();
-      }, 300);
+      if (direction === 'prev') {
+        this.app.modalManager?.prev();
+      } else {
+        this.app.modalManager?.next();
+      }
     } else {
       // 스와이프 취소 - 원래 위치로 복귀
-      this.modalSwipeElement.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
-      this.modalSwipeElement.style.transform = 'translateX(0)';
-      this.modalSwipeElement.style.opacity = '1';
-
-      setTimeout(() => {
-        this.resetModalSwipe();
-      }, 200);
+      this.modalSwipeElement.style.transform = 'translateX(-33.333%)';
     }
+
+    setTimeout(() => {
+      this.resetModalSwipe();
+    }, 300);
   }
 
   resetModalSwipe() {
     if (this.modalSwipeElement) {
-      this.modalSwipeElement.style.transition = '';
-      this.modalSwipeElement.style.transform = '';
-      this.modalSwipeElement.style.opacity = '';
+      this.modalSwipeElement.classList.remove('swiping', 'transitioning');
+      this.modalSwipeElement.style.transform = 'translateX(-33.333%)';
     }
     this.isModalSwiping = false;
-    this.modalSwipeElement = null;
     this.modalSwipeDirection = null;
+    this.modalSwipeElement = null;
+    this.modalSwipeStartX = 0;
+    this.modalSwipeCurrentX = 0;
   }
 
   handleTouchEnd(e, type) {

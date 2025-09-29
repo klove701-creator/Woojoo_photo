@@ -18,60 +18,16 @@ export class ModalManager {
     this.currentPhoto = photo;
 
     const modal = $('#modal');
-    const bigImg = $('#big');
-    const bigVideo = $('#bigVideo');
     const viewer = $('#modalViewer');
     const dlBtn = $('#modalDlBtn');
 
-    if (!modal || !bigImg || !bigVideo) return;
+    if (!modal || !viewer) return;
 
-    // Prepare animated transition if navigating within an open modal
-    const isOpen = modal.classList.contains('show');
-    let ghost = null;
-    let ghostIsVideo = false;
-    if (isOpen && direction && viewer) {
-      // Determine currently visible element to clone as a ghost
-      const prevElVisible = bigVideo.style.display !== 'none' && bigVideo.src ? bigVideo : bigImg;
-      if (prevElVisible && (prevPhoto || prevElVisible.src)) {
-        ghost = prevElVisible.cloneNode(true);
-        ghostIsVideo = prevElVisible === bigVideo;
-        // Ensure ghost has correct media source
-        if (ghostIsVideo) {
-          try { ghost.pause(); } catch (_) {}
-          ghost.removeAttribute('controls');
-          ghost.playsInline = true;
-          ghost.muted = true;
-          ghost.src = prevElVisible.src;
-          try { ghost.load(); } catch (_) {}
-        } else {
-          ghost.src = prevElVisible.src;
-        }
-        // Position ghost absolutely within the viewer
-        ghost.style.position = 'absolute';
-        ghost.style.inset = '0';
-        ghost.style.margin = 'auto';
-        ghost.style.maxWidth = '100%';
-        ghost.style.maxHeight = '70vh';
-        ghost.style.objectFit = 'contain';
-        ghost.style.zIndex = '5';
-        ghost.style.transition = 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)';
-        ghost.style.transform = 'translateX(0)';
-        ghost.style.opacity = '1';
-        viewer.appendChild(ghost);
-      }
-    }
+    // 슬라이더 시스템 초기화
+    this.initModalSlider();
 
-    if (isVideoUrl(photo.url)) {
-      bigImg.style.display = 'none';
-      bigVideo.style.display = 'block';
-      bigVideo.src = photo.url;
-      bigVideo.load();
-    } else {
-      bigVideo.pause();
-      bigVideo.style.display = 'none';
-      bigImg.style.display = 'block';
-      bigImg.src = photo.url;
-    }
+    // 현재 사진 설정
+    this.updateCurrentSlide();
 
     if (dlBtn) dlBtn.href = photo.url;
 
@@ -86,43 +42,126 @@ export class ModalManager {
 
     // 자동 숨김 시작
     this.app.uiManager?.resetModalAutoHide();
+  }
 
-    // Run in/out animation if applicable
-    if (ghost && direction) {
-      const incoming = isVideoUrl(photo.url) ? bigVideo : bigImg;
-      // Prepare incoming element start state
-      incoming.style.transition = 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)';
-      incoming.style.transform = direction === 'left' ? 'translateX(40px)' : 'translateX(-40px)';
-      incoming.style.opacity = '0';
-      // Force reflow before starting animations
-      // eslint-disable-next-line no-unused-expressions
-      incoming.offsetWidth;
-      // Animate
-      requestAnimationFrame(() => {
-        ghost.style.transform = direction === 'left' ? 'translateX(-40px)' : 'translateX(40px)';
-        ghost.style.opacity = '0';
-        incoming.style.transform = 'translateX(0)';
-        incoming.style.opacity = '1';
-      });
-      // Cleanup after animation
-      setTimeout(() => {
-        if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-        incoming.style.transition = '';
-        incoming.style.transform = '';
-        incoming.style.opacity = '';
-      }, 420);
+  // 모달 슬라이더 초기화
+  initModalSlider() {
+    const viewer = $('#modalViewer');
+    if (!viewer) return;
+
+    // 기존 슬라이더 구조가 있으면 제거
+    const existingSlider = viewer.querySelector('.modal-slider');
+    if (existingSlider) {
+      existingSlider.remove();
+    }
+
+    // 새 슬라이더 구조 생성
+    const slider = document.createElement('div');
+    slider.className = 'modal-slider';
+
+    const slides = document.createElement('div');
+    slides.className = 'modal-slides';
+
+    // 3개 슬라이드 생성 (이전, 현재, 다음)
+    for (let i = 0; i < 3; i++) {
+      const slide = document.createElement('div');
+      slide.className = 'modal-slide';
+      slides.appendChild(slide);
+    }
+
+    slider.appendChild(slides);
+
+    // 기존 이미지/비디오 요소들을 슬라이더 앞에 숨기기
+    const bigImg = $('#big');
+    const bigVideo = $('#bigVideo');
+    if (bigImg) bigImg.style.display = 'none';
+    if (bigVideo) bigVideo.style.display = 'none';
+
+    viewer.insertBefore(slider, viewer.firstChild);
+
+    this.modalSlides = slides;
+  }
+
+  // 현재 슬라이드 업데이트
+  updateCurrentSlide() {
+    if (!this.modalSlides) return;
+
+    const slides = this.modalSlides.querySelectorAll('.modal-slide');
+    if (slides.length !== 3) return;
+
+    // 이전, 현재, 다음 사진 인덱스 계산
+    const prevIndex = this.currentIndex > 0 ? this.currentIndex - 1 : null;
+    const nextIndex = this.currentIndex < this.photos.length - 1 ? this.currentIndex + 1 : null;
+
+    // 각 슬라이드에 사진 설정
+    this.setSlideContent(slides[0], prevIndex !== null ? this.photos[prevIndex] : null);
+    this.setSlideContent(slides[1], this.currentPhoto);
+    this.setSlideContent(slides[2], nextIndex !== null ? this.photos[nextIndex] : null);
+  }
+
+  // 슬라이드에 콘텐츠 설정
+  setSlideContent(slide, photo) {
+    slide.innerHTML = '';
+
+    if (!photo) {
+      slide.style.opacity = '0.3';
+      return;
+    }
+
+    slide.style.opacity = '1';
+
+    if (isVideoUrl(photo.url)) {
+      const video = document.createElement('video');
+      video.src = photo.url;
+      video.controls = true;
+      video.playsInline = true;
+      slide.appendChild(video);
+    } else {
+      const img = document.createElement('img');
+      img.src = photo.url;
+      img.alt = 'photo';
+      slide.appendChild(img);
     }
   }
 
   prev() {
     if (this.currentIndex > 0) {
-      this.showModal(this.photos[this.currentIndex - 1], this.photos, 'right');
+      this.currentIndex--;
+      this.currentPhoto = this.photos[this.currentIndex];
+      this.slideToPhoto('right');
     }
   }
 
   next() {
     if (this.currentIndex < this.photos.length - 1) {
-      this.showModal(this.photos[this.currentIndex + 1], this.photos, 'left');
+      this.currentIndex++;
+      this.currentPhoto = this.photos[this.currentIndex];
+      this.slideToPhoto('left');
+    }
+  }
+
+  // 슬라이드 애니메이션
+  slideToPhoto(direction) {
+    if (!this.modalSlides) return;
+
+    // 현재 슬라이드 업데이트
+    this.updateCurrentSlide();
+
+    // 메타데이터 업데이트
+    const dlBtn = $('#modalDlBtn');
+    if (dlBtn) dlBtn.href = this.currentPhoto.url;
+
+    this.renderStrip();
+    this.loadComments(this.currentPhoto);
+    this.updateReactionsUI(this.currentPhoto);
+    this.updateModalHeader(this.currentPhoto);
+
+    // Day Grid가 열려있다면 업데이트
+    this.updateDayGridIfOpen();
+
+    // 타임라인 업데이트
+    if (this.app.uiManager?.currentTab === 'timeline') {
+      this.app.renderTimeline();
     }
   }
 
