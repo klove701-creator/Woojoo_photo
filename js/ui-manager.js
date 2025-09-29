@@ -1037,11 +1037,13 @@ export class UIManager {
     grid.innerHTML = shuffledPhotos.map(photo => {
       const badges = this.app.photoManager.generateBadges(photo);
       const photoId = photo.id || photo.public_id || photo.url;
-      
+      const stats = this.app.generatePhotoStats(photo);
+
       return `<div class="cell" data-photo-id="${photoId}">
         <div class="day-grid-selector"></div>
         <img class="openable" data-id="${photoId}" src="${preview(photo.url, 600, 600)}" alt="photo"/>
         ${badges}
+        ${stats}
       </div>`;
     }).join('');
     
@@ -1622,6 +1624,14 @@ export class UIManager {
     }).catch(e => console.warn('댓글 활동 로그 저장 실패:', e));
 
     input.value = '';
+
+    // 타임라인 업데이트 (댓글 카운트 반영)
+    if (this.currentTab === 'timeline') {
+      this.app.renderTimeline();
+    }
+
+    // Day Grid가 열려있다면 업데이트
+    this.app.modalManager?.updateDayGridIfOpen();
   }
 
   // 모달 자동 숨김 기능

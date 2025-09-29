@@ -254,14 +254,70 @@ export class ModalManager {
     if (!this.currentPhoto.reactions) this.currentPhoto.reactions = {};
     const users = this.currentPhoto.reactions[emoji] || [];
     const idx = users.indexOf(this.app.currentUser);
-    if (idx >= 0) {
+    const wasLiked = idx >= 0;
+
+    if (wasLiked) {
       users.splice(idx, 1);
     } else {
       users.push(this.app.currentUser);
+      // 하트 이모지일 때 이펙트 표시
+      if (emoji === '❤️') {
+        this.showHeartEffect();
+      }
     }
     this.currentPhoto.reactions[emoji] = users;
     this.updateReactionsUI(this.currentPhoto);
     this.app.photoManager.updatePhoto(this.currentPhoto, { reactions: this.currentPhoto.reactions });
+
+    // 타임라인 업데이트 (하트/댓글 카운트 반영)
+    if (this.app.uiManager?.currentTab === 'timeline') {
+      this.app.renderTimeline();
+    }
+
+    // Day Grid가 열려있다면 업데이트
+    this.updateDayGridIfOpen();
+  }
+
+  // 인스타그램식 하트 이펙트
+  showHeartEffect() {
+    const viewer = $('#modalViewer');
+    if (!viewer) return;
+
+    // 하트 이펙트 요소 생성
+    const heartEffect = document.createElement('div');
+    heartEffect.className = 'heart-effect';
+    heartEffect.textContent = '❤️';
+
+    // 화면 중앙에 위치시키기
+    const viewerRect = viewer.getBoundingClientRect();
+    heartEffect.style.left = `${viewerRect.width / 2 - 40}px`; // 하트 크기의 절반만큼 조정
+    heartEffect.style.top = `${viewerRect.height / 2 - 40}px`;
+
+    viewer.appendChild(heartEffect);
+
+    // 애니메이션 완료 후 요소 제거
+    setTimeout(() => {
+      if (heartEffect && heartEffect.parentNode) {
+        heartEffect.parentNode.removeChild(heartEffect);
+      }
+    }, 1200);
+  }
+
+  // Day Grid 업데이트 (열려있는 경우)
+  updateDayGridIfOpen() {
+    const dayGridOverlay = document.getElementById('dayGridOverlay');
+    if (dayGridOverlay && dayGridOverlay.classList.contains('show')) {
+      // Day Grid가 현재 열려있다면 다시 렌더링
+      const currentDate = this.app.uiManager.currentGridDate;
+      if (currentDate) {
+        // 현재 사진의 날짜가 Day Grid와 같다면 업데이트
+        const photoDate = this.currentPhoto?.dateGroup ||
+                         (this.currentPhoto?.uploadedAt ? this.currentPhoto.uploadedAt.split('T')[0] : null);
+        if (photoDate === currentDate) {
+          this.app.uiManager.showDayGrid(currentDate);
+        }
+      }
+    }
   }
 
   updateReactionsUI(photo) {

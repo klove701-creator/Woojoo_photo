@@ -537,6 +537,7 @@ export class App {
             <div class="hero-tile open-grid" data-date="${date}" data-id="${heroId}">
               <img src="${preview(hero.url, 600, 600)}" alt="대표 이미지"/>
               ${this.photoManager.generateBadges(hero)}
+              ${this.generatePhotoStats(hero)}
             </div>
             <div class="tile-grid">
               ${tiles}
@@ -564,6 +565,36 @@ export class App {
         if (date) this.uiManager.showDayGrid(date);
       });
     });
+  }
+
+  // 사진 통계 생성 (하트, 댓글)
+  generatePhotoStats(photo) {
+    if (!photo) return '';
+
+    // 하트 개수 계산
+    const heartCount = photo.reactions?.['❤️']?.length || 0;
+
+    // 댓글 개수는 실시간으로 가져오기 어려우므로 로컬스토리지에서 계산
+    const photoId = photo.id || photo.public_id || photo.url;
+    const commentsKey = `comments_${photoId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const comments = JSON.parse(localStorage.getItem(commentsKey) || '[]');
+    const commentCount = comments.length;
+
+    if (heartCount === 0 && commentCount === 0) return '';
+
+    let statsHtml = '<div class="photo-stats">';
+
+    if (heartCount > 0) {
+      statsHtml += `<span class="stat-item">❤️ ${heartCount}</span>`;
+    }
+
+    if (commentCount > 0) {
+      statsHtml += `<span class="stat-item">💬 ${commentCount}</span>`;
+    }
+
+    statsHtml += '</div>';
+
+    return statsHtml;
   }
 
   // D-Day 계산

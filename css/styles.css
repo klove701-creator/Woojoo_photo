@@ -2112,6 +2112,107 @@ input:focus, select:focus{
   line-height: 1.5;
 }
 
+/* Photo Stats (하트, 댓글 카운트) */
+.photo-stats {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 16px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: white;
+  font-weight: 500;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+/* 타일에서 통계가 잘 보이도록 스타일 조정 */
+.hero-tile, .tile, .cell {
+  position: relative;
+}
+
+.hero-tile .photo-stats {
+  bottom: 12px;
+  left: 12px;
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+/* Day Grid 셀의 통계 스타일 */
+.cell .photo-stats {
+  bottom: 8px;
+  left: 8px;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.day-grid .cell .photo-stats {
+  z-index: 5;
+}
+
+/* Instagram-style heart effect */
+.heart-effect {
+  position: absolute;
+  font-size: 80px;
+  color: #ff3040;
+  pointer-events: none;
+  z-index: 30000;
+  animation: heartPop 1.2s ease-out forwards;
+  text-shadow: 0 0 20px rgba(255, 48, 64, 0.5);
+}
+
+@keyframes heartPop {
+  0% {
+    transform: scale(0) rotate(-15deg);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.2) rotate(-10deg);
+    opacity: 1;
+  }
+  30% {
+    transform: scale(0.95) rotate(-5deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.1) rotate(2deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.3) rotate(5deg);
+    opacity: 0;
+  }
+}
+
+/* Heart button active state */
+.reaction.heart-reaction.active svg {
+  fill: #ff3040;
+  stroke: #ff3040;
+  animation: heartBeat 0.6s ease;
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
 /* Splash Controls */
 .day-grid-splash-controls {
   position: absolute;
