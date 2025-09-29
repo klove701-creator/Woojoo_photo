@@ -302,60 +302,61 @@
         <img id="big" src="" alt="미리보기" />
         <video id="bigVideo" controls playsinline></video>
         
-        <div class="modal-actions">
-          <button id="albumBtn" class="action-btn" title="앨범에 추가">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-7 5h4"/>
+        <!-- Top Header with D-Day and Date -->
+        <div class="modal-top-header" id="modalTopHeader">
+          <button id="modalBackBtn" class="modal-back-btn" title="뒤로">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 19-7-7 7-7"/>
+              <path d="M19 12H5"/>
             </svg>
           </button>
-          <a id="dlBtn" class="action-btn" download target="_blank" rel="noopener" title="다운로드">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
-            </svg>
-          </a>
-          <button id="delBtn" class="action-btn delete" title="삭제">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-          </button>
-          <button id="closeBtn" class="action-btn" title="닫기">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
+          <div class="modal-date-info">
+            <div class="modal-dday" id="modalDday"></div>
+            <div class="modal-date" id="modalDate"></div>
+          </div>
+          <div class="modal-actions" id="modalActions">
+            <div class="modal-menu-container">
+              <button id="modalMenuBtn" class="action-btn" title="메뉴">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="3" x2="21" y1="6" y2="6"/>
+                  <line x1="3" x2="21" y1="12" y2="12"/>
+                  <line x1="3" x2="21" y1="18" y2="18"/>
+                </svg>
+              </button>
+              <div id="modalDropdown" class="modal-dropdown-menu hidden">
+                <button class="modal-dropdown-item" id="modalAlbumBtn">📁 앨범에 추가</button>
+                <a class="modal-dropdown-item" id="modalDlBtn" download target="_blank" rel="noopener">💾 다운로드</a>
+                <button class="modal-dropdown-item modal-delete" id="modalDelBtn">🗑️ 삭제</button>
+              </div>
+            </div>
+          </div>
         </div>
         
         <button id="prevBtn" class="navbtn prev" aria-label="이전">‹</button>
         <button id="nextBtn" class="navbtn next" aria-label="다음">›</button>
       </div>
       
-      <!-- Emoji Reactions -->
-      <div class="reactions">
-        <button class="reaction" data-emoji="❤️">
-          <span>❤️</span>
-          <span class="reaction-count">0</span>
-        </button>
-        <button class="reaction" data-emoji="😍">
-          <span>😍</span>
-          <span class="reaction-count">0</span>
-        </button>
-        <button class="reaction" data-emoji="🥰">
-          <span>🥰</span>
-          <span class="reaction-count">0</span>
-        </button>
-        <button class="reaction" data-emoji="😊">
-          <span>😊</span>
-          <span class="reaction-count">0</span>
-        </button>
-        <button class="reaction" data-emoji="👍">
-          <span>👍</span>
-          <span class="reaction-count">0</span>
-        </button>
+      <!-- Bottom Footer with Reactions and Share -->
+      <div class="modal-bottom-footer" id="modalBottomFooter">
+        <div class="modal-reactions">
+          <button class="reaction heart-reaction" data-emoji="❤️">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7z"/>
+            </svg>
+            <span class="reaction-count">0</span>
+          </button>
+          <button class="reaction comment-toggle" id="commentToggleBtn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              <path d="M9 10h6"/>
+              <path d="M9 14h6"/>
+            </svg>
+            <span class="comment-indicator"></span>
+          </button>
+        </div>
       </div>
       
-      <div id="strip" class="strip" aria-label="썸네일 목록"></div>
-      
-      <div class="comments">
+      <div class="comments" id="modalComments">
         <div id="commentList" class="comment-list" aria-live="polite"></div>
         <div class="comment-input">
           <input id="commentInput" type="text" placeholder="댓글을 입력하세요" maxlength="300" />

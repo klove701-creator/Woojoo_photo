@@ -21,7 +21,7 @@ export class ModalManager {
     const bigImg = $('#big');
     const bigVideo = $('#bigVideo');
     const viewer = $('#modalViewer');
-    const dlBtn = $('#dlBtn');
+    const dlBtn = $('#modalDlBtn');
 
     if (!modal || !bigImg || !bigVideo) return;
 
@@ -78,10 +78,14 @@ export class ModalManager {
     this.renderStrip();
     this.loadComments(photo);
     this.updateReactionsUI(photo);
+    this.updateModalHeader(photo);
 
     modal.classList.remove('slide-right');
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
+
+    // 자동 숨김 시작
+    this.app.uiManager?.resetModalAutoHide();
 
     // Run in/out animation if applicable
     if (ghost && direction) {
@@ -269,5 +273,34 @@ export class ModalManager {
       if (countSpan) countSpan.textContent = users.length;
       btn.classList.toggle('active', users.includes(this.app.currentUser));
     });
+  }
+
+  updateModalHeader(photo) {
+    const ddayElement = $('#modalDday');
+    const dateElement = $('#modalDate');
+
+    if (!ddayElement || !dateElement) return;
+
+    // 사진의 날짜 정보 가져오기 (dateGroup 또는 uploadedAt 사용)
+    const photoDate = photo.dateGroup || (photo.uploadedAt ? photo.uploadedAt.split('T')[0] : null);
+
+    if (photoDate) {
+      // D-Day 계산
+      const ddayText = this.app.calculateDDay(photoDate);
+      ddayElement.textContent = ddayText;
+
+      // 날짜 표시 ("패밀리" 제거)
+      const date = new Date(photoDate + 'T00:00:00');
+      const dateText = date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      dateElement.textContent = dateText;
+    } else {
+      // 날짜 정보가 없는 경우
+      ddayElement.textContent = '';
+      dateElement.textContent = '';
+    }
   }
 }

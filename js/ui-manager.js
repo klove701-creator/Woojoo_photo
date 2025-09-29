@@ -54,15 +54,37 @@ export class UIManager {
     $('#closeBtn')?.addEventListener('click', () => this.hideModal());
     $('#prevBtn')?.addEventListener('click', () => this.app.modalManager?.prev());
     $('#nextBtn')?.addEventListener('click', () => this.app.modalManager?.next());
-    $('#delBtn')?.addEventListener('click', () => this.app.modalManager?.deleteCurrent());
+
+    // 새로운 모달 드롭다운 메뉴
+    $('#modalMenuBtn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleModalDropdown();
+    });
+    $('#modalAlbumBtn')?.addEventListener('click', () => this.app.modalManager?.showAlbumSelector());
+    $('#modalDelBtn')?.addEventListener('click', () => this.app.modalManager?.deleteCurrent());
+
+    // 모달 뒤로가기 버튼
+    $('#modalBackBtn')?.addEventListener('click', () => this.hideModal());
+
+    // 댓글 토글 버튼
+    $('#commentToggleBtn')?.addEventListener('click', () => this.toggleComments());
+
+    // 모달 자동 숨김을 위한 이벤트
+    this.bindModalAutoHide();
     // 캘린더 관련
     $('#prevM')?.addEventListener('click', () => this.navigateMonth(-1));
     $('#nextM')?.addEventListener('click', () => this.navigateMonth(1));
     $('#calTitle')?.addEventListener('click', () => this.showYearPicker());
     // 댓글 관련
-    $('#commentSend')?.addEventListener('click', () => this.app.modalManager?.submitComment());
+    $('#commentSend')?.addEventListener('click', () => {
+      this.app.modalManager?.submitComment();
+      this.hideCommentInput();
+    });
     $('#commentInput')?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') this.app.modalManager?.submitComment();
+      if (e.key === 'Enter') {
+        this.app.modalManager?.submitComment();
+        this.hideCommentInput();
+      }
     });
     // 멤버 관리
     $('#memberAdd')?.addEventListener('click', () => this.addMember());
@@ -121,11 +143,11 @@ export class UIManager {
   }
   // 스와이프 이벤트
   bindSwipeEvents() {
-    // 모달 스와이프
+    // 모달 스와이프 - 향상된 감도
     const modal = $('#modal');
-    modal?.addEventListener('touchstart', (e) => this.handleTouchStart(e, 'modal'), {passive: true});
-    modal?.addEventListener('touchmove', (e) => this.handleTouchMove(e, 'modal'), {passive: true});
-    modal?.addEventListener('touchend', (e) => this.handleTouchEnd(e, 'modal'), {passive: true});
+    modal?.addEventListener('touchstart', (e) => this.handleModalTouchStart(e), {passive: true});
+    modal?.addEventListener('touchmove', (e) => this.handleModalTouchMove(e), {passive: false});
+    modal?.addEventListener('touchend', (e) => this.handleModalTouchEnd(e), {passive: true});
     
     // 탭 스와이프
     const tabContainer = $('#tabContainer');
@@ -147,28 +169,121 @@ export class UIManager {
   handleTouchMove(e, type) {
     if (this.isSwipeProcessing) return;
   }
-  handleTouchEnd(e, type) {
-    if (this.isSwipeProcessing) return;
-    
-    const deltaX = e.changedTouches[0].clientX - this.swipeStartX;
-    const deltaY = e.changedTouches[0].clientY - this.swipeStartY;
-    
-    // 세로 스크롤이 우선이면 스와이프 무시
-    if (Math.abs(deltaY) > Math.abs(deltaX)) return;
-    
-    if (Math.abs(deltaX) > this.swipeThreshold) {
-      this.isSwipeProcessing = true;
-      
-      if (type === 'modal') {
-        if (deltaX > 0) {
+  // 향상된 모달 스와이프 핸들러
+  handleModalTouchStart(e) {
+    this.modalSwipeStartX = e.touches[0].clientX;
+    this.modalSwipeStartY = e.touches[0].clientY;
+    this.modalSwipeCurrentX = this.modalSwipeStartX;
+    this.isModalSwiping = false;
+    this.modalSwipeDirection = null;
+
+    // 현재 이미지 요소 가져오기
+    const viewer = $('#modalViewer');
+    if (viewer) {
+      this.modalSwipeElement = viewer.querySelector('#big:not([style*="display: none"]), #bigVideo:not([style*="display: none"])');
+    }
+  }
+
+  handleModalTouchMove(e) {
+    if (!this.modalSwipeElement) return;
+
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const deltaX = currentX - this.modalSwipeStartX;
+    const deltaY = currentY - this.modalSwipeStartY;
+
+    // 세로 스크롤이 더 크면 스와이프 취소
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 20) {
+      return;
+    }
+
+    // 가로 스와이프 시작 감지
+    if (Math.abs(deltaX) > 10 && !this.isModalSwiping) {
+      this.isModalSwiping = true;
+      this.modalSwipeDirection = deltaX > 0 ? 'right' : 'left';
+      e.preventDefault();
+    }
+
+    if (this.isModalSwiping) {
+      e.preventDefault();
+
+      // 실시간 변형 적용
+      const progress = Math.min(Math.abs(deltaX) / 150, 1);
+      const translateX = deltaX * 0.8; // 약간의 저항감
+
+      this.modalSwipeElement.style.transform = `translateX(${translateX}px)`;
+      this.modalSwipeElement.style.opacity = 1 - (progress * 0.3);
+
+      this.modalSwipeCurrentX = currentX;
+    }
+  }
+
+  handleModalTouchEnd(e) {
+    if (!this.isModalSwiping || !this.modalSwipeElement) {
+      this.resetModalSwipe();
+      return;
+    }
+
+    const deltaX = this.modalSwipeCurrentX - this.modalSwipeStartX;
+    const velocity = Math.abs(deltaX);
+    const threshold = 80; // 스와이프 임계값
+
+    if (velocity > threshold) {
+      // 스와이프 완료 - 다음/이전 사진으로 이동
+      const direction = deltaX > 0 ? 'prev' : 'next';
+
+      // 완료 애니메이션
+      this.modalSwipeElement.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+      this.modalSwipeElement.style.transform = `translateX(${deltaX > 0 ? '100%' : '-100%'})`;
+      this.modalSwipeElement.style.opacity = '0';
+
+      setTimeout(() => {
+        if (direction === 'prev') {
           this.app.modalManager?.prev();
         } else {
           this.app.modalManager?.next();
         }
-      } else if (type === 'tab') {
+        this.resetModalSwipe();
+      }, 300);
+    } else {
+      // 스와이프 취소 - 원래 위치로 복귀
+      this.modalSwipeElement.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+      this.modalSwipeElement.style.transform = 'translateX(0)';
+      this.modalSwipeElement.style.opacity = '1';
+
+      setTimeout(() => {
+        this.resetModalSwipe();
+      }, 200);
+    }
+  }
+
+  resetModalSwipe() {
+    if (this.modalSwipeElement) {
+      this.modalSwipeElement.style.transition = '';
+      this.modalSwipeElement.style.transform = '';
+      this.modalSwipeElement.style.opacity = '';
+    }
+    this.isModalSwiping = false;
+    this.modalSwipeElement = null;
+    this.modalSwipeDirection = null;
+  }
+
+  handleTouchEnd(e, type) {
+    if (this.isSwipeProcessing) return;
+
+    const deltaX = e.changedTouches[0].clientX - this.swipeStartX;
+    const deltaY = e.changedTouches[0].clientY - this.swipeStartY;
+
+    // 세로 스크롤이 우선이면 스와이프 무시
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+
+    if (Math.abs(deltaX) > this.swipeThreshold) {
+      this.isSwipeProcessing = true;
+
+      if (type === 'tab') {
         const tabs = ['timeline', 'calendar', 'albums', 'schedule'];
         const currentIndex = tabs.indexOf(this.currentTab);
-        
+
         if (deltaX > 0 && currentIndex > 0) {
           this.showTab(tabs[currentIndex - 1]);
         } else if (deltaX < 0 && currentIndex < tabs.length - 1) {
@@ -181,7 +296,7 @@ export class UIManager {
           this.navigateMonth(1);
         }
       }
-      
+
       setTimeout(() => { this.isSwipeProcessing = false; }, 300);
     }
   }
@@ -1108,20 +1223,43 @@ export class UIManager {
     this.currentSplashIndex = (this.currentSplashIndex + 1) % this.currentSplashPhotos.length;
     const nextPhoto = this.currentSplashPhotos[this.currentSplashIndex];
 
-    // 현재 이미지에서 페이드 줌 제거하고 디졸브 시작
-    splashImage.classList.remove('fade-zoom');
-    splashImage.classList.add('fade-out');
+    // 새 이미지 미리 로드
+    const nextImage = new Image();
+    nextImage.onload = () => {
+      // 현재 애니메이션 상태와 상관없이 부드럽게 전환 시작
+      splashImage.style.transition = 'opacity 2s ease-out, transform 2s ease-out, filter 2s ease-out';
 
-    // 0.8초 후에 이미지 변경하고 새 이미지에 페이드 줌 시작
-    setTimeout(() => {
-      splashImage.src = preview(nextPhoto.url, 800, 400);
-      splashImage.classList.remove('fade-out');
+      // 현재 상태에서 자연스럽게 디졸브 시작
+      requestAnimationFrame(() => {
+        // 모든 애니메이션 클래스 제거
+        splashImage.classList.remove('fade-zoom', 'fade-dissolve', 'fade-in');
 
-      // 새 이미지가 로드된 후 페이드 줌 애니메이션 시작
+        // CSS transition으로 부드럽게 페이드아웃
+        splashImage.style.opacity = '0';
+        splashImage.style.transform = 'scale(1.05)';
+        splashImage.style.filter = 'brightness(0.7) contrast(0.8)';
+      });
+
+      // 2초 후 새 이미지로 교체
       setTimeout(() => {
-        splashImage.classList.add('fade-zoom');
-      }, 100);
-    }, 800);
+        // 이미지 교체
+        splashImage.src = preview(nextPhoto.url, 800, 400);
+
+        // 초기 상태로 리셋
+        splashImage.style.opacity = '1';
+        splashImage.style.transform = 'scale(1)';
+        splashImage.style.filter = 'brightness(1) contrast(1)';
+
+        // transition 제거하고 애니메이션으로 복귀
+        setTimeout(() => {
+          splashImage.style.transition = '';
+          splashImage.classList.add('fade-zoom');
+        }, 100);
+      }, 2000);
+    };
+
+    // 새 이미지 로드 시작
+    nextImage.src = preview(nextPhoto.url, 800, 400);
   }
 
   stopSplashSlideshow() {
@@ -1279,13 +1417,117 @@ export class UIManager {
   hideModal() {
     const modal = $('#modal');
     const video = $('#bigVideo');
-    
+
     try {
       video?.pause();
     } catch (e) {}
-    
+
     modal?.classList.remove('show');
     document.body.style.overflow = 'auto';
+
+    // 자동 숨김 타이머 정리
+    this.clearModalAutoHideTimer();
+  }
+
+  // 모달 드롭다운 토글
+  toggleModalDropdown() {
+    const dropdown = $('#modalDropdown');
+    if (!dropdown) return;
+
+    dropdown.classList.toggle('hidden');
+
+    // 외부 클릭 시 닫기
+    if (!dropdown.classList.contains('hidden')) {
+      setTimeout(() => {
+        document.addEventListener('click', this.closeModalDropdown.bind(this), { once: true });
+      }, 0);
+    }
+  }
+
+  closeModalDropdown() {
+    $('#modalDropdown')?.classList.add('hidden');
+  }
+
+  // 댓글 입력창 토글
+  toggleComments() {
+    const commentInputContainer = $('.comment-input');
+    const commentsSection = $('#modalComments');
+
+    if (!commentInputContainer) return;
+
+    const isActive = commentInputContainer.classList.contains('active');
+
+    if (isActive) {
+      // 입력창 숨기기
+      commentInputContainer.classList.remove('active');
+      commentsSection?.classList.remove('input-active');
+    } else {
+      // 입력창 표시
+      commentInputContainer.classList.add('active');
+      commentsSection?.classList.add('input-active');
+
+      // 입력창이 나타난 후 포커스
+      setTimeout(() => {
+        const commentInput = $('#commentInput');
+        if (commentInput) {
+          commentInput.focus();
+          commentInput.placeholder = '댓글을 입력하세요...';
+        }
+      }, 300);
+    }
+
+    // 자동 숨김 재설정
+    this.resetModalAutoHide();
+  }
+
+  // 댓글 입력창 숨기기
+  hideCommentInput() {
+    const commentInputContainer = $('.comment-input');
+    const commentsSection = $('#modalComments');
+
+    if (commentInputContainer) {
+      commentInputContainer.classList.remove('active');
+      commentsSection?.classList.remove('input-active');
+    }
+  }
+
+  // 모달 자동 숨김 기능
+  bindModalAutoHide() {
+    const modal = $('#modal');
+    if (!modal) return;
+
+    // 마우스 움직임 감지
+    modal.addEventListener('mousemove', () => this.resetModalAutoHide());
+    modal.addEventListener('touchstart', () => this.resetModalAutoHide());
+    modal.addEventListener('click', () => this.resetModalAutoHide());
+  }
+
+  resetModalAutoHide() {
+    const modal = $('#modal');
+    if (!modal || !modal.classList.contains('show')) return;
+
+    const topHeader = $('#modalTopHeader');
+    const bottomFooter = $('#modalBottomFooter');
+
+    // UI 요소 표시
+    topHeader?.classList.remove('auto-hide');
+    bottomFooter?.classList.remove('auto-hide');
+
+    // 기존 타이머 정리
+    this.clearModalAutoHideTimer();
+
+    // 3초 후 자동 숨김
+    this.modalAutoHideTimer = setTimeout(() => {
+      topHeader?.classList.add('auto-hide');
+      bottomFooter?.classList.add('auto-hide');
+    }, 3000);
+  }
+
+  clearModalAutoHideTimer() {
+    if (this.modalAutoHideTimer) {
+      clearTimeout(this.modalAutoHideTimer);
+      this.modalAutoHideTimer = null;
+    }
   }
 
   // 중복 사진 관리
