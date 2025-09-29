@@ -1841,7 +1841,7 @@ input:focus, select:focus{
   display: block;
 }
 
-/* Comments Section - Always Visible */
+/* Comments Section - Hidden by Default */
 .comments {
   position: absolute;
   bottom: 0;
@@ -1854,6 +1854,15 @@ input:focus, select:focus{
   backdrop-filter: blur(15px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  transform: translateY(100%);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.comments.active {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
 }
 
 .comments.input-active {

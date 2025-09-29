@@ -1448,46 +1448,53 @@ export class UIManager {
     $('#modalDropdown')?.classList.add('hidden');
   }
 
-  // 댓글 입력창 토글
+  // 댓글 창 토글
   toggleComments() {
-    const commentInputContainer = $('.comment-input');
     const commentsSection = $('#modalComments');
+    const commentInputContainer = $('.comment-input');
 
-    if (!commentInputContainer) return;
+    if (!commentsSection) return;
 
-    const isActive = commentInputContainer.classList.contains('active');
+    const isActive = commentsSection.classList.contains('active');
 
     if (isActive) {
-      // 입력창 숨기기
-      commentInputContainer.classList.remove('active');
-      commentsSection?.classList.remove('input-active');
+      // 댓글 창 숨기기
+      commentsSection.classList.remove('active');
+      commentInputContainer?.classList.remove('active');
+      commentsSection.classList.remove('input-active');
     } else {
-      // 입력창 표시
-      commentInputContainer.classList.add('active');
-      commentsSection?.classList.add('input-active');
+      // 댓글 창 표시
+      commentsSection.classList.add('active');
 
-      // 입력창이 나타난 후 포커스
+      // 입력창도 함께 활성화
       setTimeout(() => {
+        commentInputContainer?.classList.add('active');
+        commentsSection.classList.add('input-active');
+
+        // 입력창 포커스
         const commentInput = $('#commentInput');
         if (commentInput) {
           commentInput.focus();
           commentInput.placeholder = '댓글을 입력하세요...';
         }
-      }, 300);
+      }, 100);
     }
 
     // 자동 숨김 재설정
     this.resetModalAutoHide();
   }
 
-  // 댓글 입력창 숨기기
+  // 댓글 창 숨기기
   hideCommentInput() {
     const commentInputContainer = $('.comment-input');
     const commentsSection = $('#modalComments');
 
     if (commentInputContainer) {
       commentInputContainer.classList.remove('active');
-      commentsSection?.classList.remove('input-active');
+    }
+
+    if (commentsSection) {
+      commentsSection.classList.remove('input-active', 'active');
     }
   }
 
