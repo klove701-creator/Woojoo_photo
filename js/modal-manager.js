@@ -40,6 +40,9 @@ export class ModalManager {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
+    // 뒤로가기 버튼을 위한 히스토리 상태 추가
+    window.history.pushState({ page: 'modal' }, '', window.location.href);
+
     // 자동 숨김 시작
     this.app.uiManager?.resetModalAutoHide();
   }

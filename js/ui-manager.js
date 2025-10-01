@@ -1075,6 +1075,9 @@ export class UIManager {
       overlay.classList.add('show');
       overlay.setAttribute('aria-hidden', 'false');
       overlay.focus();
+
+      // 뒤로가기 버튼을 위한 히스토리 상태 추가
+      window.history.pushState({ page: 'dayGrid' }, '', window.location.href);
   }
   hideDayGrid(direction = 'back') {
     const overlay = $('#dayGridOverlay');
@@ -1538,6 +1541,9 @@ export class UIManager {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
 
+    // 뒤로가기 버튼을 위한 히스토리 상태 추가
+    window.history.pushState({ page: 'commentModal' }, '', window.location.href);
+
     // 입력창 포커스
     setTimeout(() => {
       const input = $('#commentModalInput');
@@ -1793,7 +1799,10 @@ export class UIManager {
     `;
     
     modal.classList.add('show');
-    
+
+    // 뒤로가기 버튼을 위한 히스토리 상태 추가
+    window.history.pushState({ page: 'duplicateModal' }, '', window.location.href);
+
     $('#deleteAllDuplicates').onclick = () => this.deleteAllDuplicates(duplicates);
     $('#closeDuplicateModal').onclick = () => modal.classList.remove('show');
   }
@@ -1997,9 +2006,12 @@ export class UIManager {
       
       this.renderParticipantsSelector();
     }
-    
+
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
+
+    // 뒤로가기 버튼을 위한 히스토리 상태 추가
+    window.history.pushState({ page: 'scheduleModal' }, '', window.location.href);
   }
 
   // 참여자 선택기 렌더링
