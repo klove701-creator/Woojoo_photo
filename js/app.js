@@ -3,6 +3,7 @@ import { StorageManager } from './storage-manager.js';
 import { PhotoManager } from './photo-manager.js';
 import { UIManager } from './ui-manager.js';
 import { ModalManager } from './modal-manager.js';
+import { GrowthManager } from './growth-manager.js';
 
 export class App {
   constructor() {
@@ -18,6 +19,7 @@ export class App {
     this.photoManager = null;
     this.uiManager = null;
     this.modalManager = null;
+    this.growthManager = null;
     
     this.init();
   }
@@ -35,6 +37,7 @@ export class App {
     this.storageManager = new StorageManager(this.config);
     this.photoManager = new PhotoManager(this.config, this.storageManager);
     this.modalManager = new ModalManager(this);
+    this.growthManager = new GrowthManager(this);
     
     // 사용자 복원
     this.currentUser = localStorage.getItem('currentUser') || null;

@@ -536,7 +536,7 @@ export class UIManager {
   }
   // 탭 전환
   showTab(tab) {
-    const tabs = ['timeline', 'calendar', 'albums', 'schedule'];
+    const tabs = ['timeline', 'calendar', 'albums', 'schedule', 'growth'];
     const currentIndex = tabs.indexOf(this.currentTab);
     const newIndex = tabs.indexOf(tab);
 
@@ -593,6 +593,9 @@ export class UIManager {
       }
     }
     if (tab === 'schedule') this.app.renderSchedule();
+    if (tab === 'growth' && this.app.growthManager) {
+      this.app.growthManager.initializeGrowthTab();
+    }
   }
   // 테마 적용
   applyTheme(theme) {

@@ -35,6 +35,7 @@ function setupBackButtonHandler() {
     const scheduleModal = document.getElementById('scheduleModal');
     const commentModal = document.getElementById('commentModal');
     const duplicateModal = document.getElementById('duplicateModal');
+    const growthModal = document.getElementById('growthModal');
 
     if (modal && modal.classList.contains('show')) {
       // 모달 매니저의 hideModal 함수 호출
@@ -85,6 +86,18 @@ function setupBackButtonHandler() {
 
     if (duplicateModal && duplicateModal.classList.contains('show')) {
       duplicateModal.classList.remove('show');
+      window.history.pushState({ page: 'main' }, '', window.location.href);
+      return;
+    }
+
+    if (growthModal && growthModal.classList.contains('show')) {
+      // 성장일지 매니저의 hideGrowthModal 함수 호출
+      if (window.app?.growthManager?.hideGrowthModal) {
+        window.app.growthManager.hideGrowthModal();
+      } else {
+        growthModal.classList.remove('show');
+        document.body.style.overflow = '';
+      }
       window.history.pushState({ page: 'main' }, '', window.location.href);
       return;
     }

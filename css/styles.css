@@ -2739,3 +2739,253 @@ input:focus, select:focus{
   inset: 0;
   background: rgba(0,0,0,0.3);
 }
+
+/* Growth Log Styles */
+.growth-manager {
+  max-width: 100%;
+  padding: 0 16px;
+}
+
+.growth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.growth-charts {
+  margin-bottom: 24px;
+}
+
+.chart-section {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.chart-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.growth-chart {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  background: rgba(var(--p), 0.05);
+}
+
+.growth-records {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.growth-record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.growth-record-item:last-child {
+  border-bottom: none;
+}
+
+.growth-record-item:hover {
+  background-color: rgba(var(--p), 0.05);
+  border-radius: 8px;
+  margin: 0 -8px;
+  padding: 12px 8px;
+}
+
+.growth-record-date {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.growth-record-data {
+  font-size: 14px;
+  color: var(--muted);
+  display: flex;
+  gap: 12px;
+}
+
+.growth-record-milestone {
+  font-size: 12px;
+  background: var(--p-light);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.growth-record-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.growth-record-edit,
+.growth-record-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.growth-record-edit:hover {
+  background: var(--p-light);
+  color: white;
+}
+
+.growth-record-delete:hover {
+  background: #ef4444;
+  color: white;
+}
+
+/* Growth Modal Styles */
+.growth-modal-content {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 0;
+  max-width: 500px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.growth-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.growth-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.growth-form {
+  padding: 20px;
+}
+
+.growth-form .form-group {
+  margin-bottom: 16px;
+}
+
+.growth-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.growth-form input,
+.growth-form select,
+.growth-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.growth-form input:focus,
+.growth-form select:focus,
+.growth-form textarea:focus {
+  outline: none;
+  border-color: var(--p);
+  box-shadow: 0 0 0 3px rgba(var(--p), 0.1);
+}
+
+.growth-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* Simple Chart Styles */
+.simple-chart {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 16px;
+  min-height: 120px;
+  overflow-x: auto;
+}
+
+.chart-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.chart-point:hover {
+  transform: translateY(-2px);
+}
+
+.chart-value {
+  background: var(--p);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.chart-date {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.no-chart-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.no-records {
+  text-align: center;
+  color: var(--muted);
+  padding: 20px;
+  font-style: italic;
+}

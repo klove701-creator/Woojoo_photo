@@ -46,6 +46,7 @@
         <div class="tab" data-tab="calendar">캘린더</div>
         <div class="tab" data-tab="albums">앨범</div>
         <div class="tab" data-tab="schedule">일정표</div>
+        <div class="tab" data-tab="growth">성장일지</div>
       </div>
     </div>
   </div>
@@ -192,7 +193,7 @@
               <div style="font-weight:700">📅 가족 일정표</div>
               <button id="addScheduleBtn" class="btn">+ 일정 추가</button>
             </div>
-            
+
             <div class="schedule-calendar">
               <div class="schedule-cal-header">
                 <button id="schedulePrevM" class="btn secondary">◀</button>
@@ -201,13 +202,45 @@
               </div>
               <div class="schedule-cal-grid" id="scheduleCalGrid"></div>
             </div>
-            
+
             <div class="schedule-list">
               <div style="font-weight:700; margin:16px 0 8px 0">📅 오늘의 일정</div>
               <div id="todaySchedules"></div>
 
               <div style="font-weight:700; margin:16px 0 8px 0">📋 예정된 일정</div>
               <div id="upcomingSchedules"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Growth Log -->
+        <div id="growth" class="tab-content">
+          <div class="growth-manager">
+            <div class="growth-header">
+              <div style="font-weight:700">📊 성장일지</div>
+              <button id="addGrowthBtn" class="btn">+ 기록 추가</button>
+            </div>
+
+            <!-- 성장 차트 -->
+            <div class="growth-charts">
+              <div class="chart-section">
+                <h4>📏 키 성장 차트</h4>
+                <div id="heightChart" class="growth-chart"></div>
+              </div>
+
+              <div class="chart-section">
+                <h4>⚖️ 몸무게 성장 차트</h4>
+                <div id="weightChart" class="growth-chart"></div>
+              </div>
+            </div>
+
+            <!-- 최근 기록 -->
+            <div class="growth-records">
+              <div style="font-weight:700; margin:16px 0 8px 0">📈 최근 기록</div>
+              <div id="recentGrowthRecords"></div>
+
+              <div style="font-weight:700; margin:16px 0 8px 0">📋 모든 기록</div>
+              <div id="allGrowthRecords"></div>
             </div>
           </div>
         </div>
@@ -288,6 +321,66 @@
           
           <div class="form-actions">
             <button type="button" id="deleteScheduleBtn" class="btn secondary" style="background:#ef4444; display:none;">삭제</button>
+            <button type="submit" class="btn">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Growth Modal -->
+  <div id="growthModal" class="modal" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="growth-modal-content">
+        <div class="growth-modal-header">
+          <h3 id="growthModalTitle">성장 기록 추가</h3>
+          <button id="closeGrowthModal" class="action-btn">×</button>
+        </div>
+
+        <form id="growthForm" class="growth-form">
+          <div class="form-group">
+            <label>측정 날짜</label>
+            <input id="growthDate" type="date" required />
+          </div>
+
+          <div class="form-group">
+            <label>키 (cm)</label>
+            <input id="growthHeight" type="number" step="0.1" placeholder="예: 50.5" />
+          </div>
+
+          <div class="form-group">
+            <label>몸무게 (kg)</label>
+            <input id="growthWeight" type="number" step="0.01" placeholder="예: 3.25" />
+          </div>
+
+          <div class="form-group">
+            <label>머리둘레 (cm)</label>
+            <input id="growthHeadCircumference" type="number" step="0.1" placeholder="예: 35.0" />
+          </div>
+
+          <div class="form-group">
+            <label>발달 단계</label>
+            <select id="growthMilestone">
+              <option value="">선택하세요</option>
+              <option value="목가누기">목가누기 👶</option>
+              <option value="뒤집기">뒤집기 🔄</option>
+              <option value="앉기">앉기 🪑</option>
+              <option value="기어다니기">기어다니기 🐛</option>
+              <option value="잡고서기">잡고서기 🤲</option>
+              <option value="걸음마">걸음마 👶‍♂️</option>
+              <option value="말하기">말하기 💬</option>
+              <option value="젖니">젖니 🦷</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>메모</label>
+            <textarea id="growthMemo" placeholder="오늘의 특별한 성장이나 변화가 있다면 기록해보세요" rows="3"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="deleteGrowthBtn" class="btn secondary" style="background:#ef4444; display:none;">삭제</button>
             <button type="submit" class="btn">저장</button>
           </div>
         </form>
