@@ -49,6 +49,7 @@ function setupBackButtonHandler() {
         document.body.style.overflow = '';
       }
       window.history.pushState({ page: 'main' }, '', window.location.href);
+      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
@@ -60,6 +61,7 @@ function setupBackButtonHandler() {
         dayGridOverlay.classList.remove('show');
       }
       window.history.pushState({ page: 'main' }, '', window.location.href);
+      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
@@ -72,6 +74,7 @@ function setupBackButtonHandler() {
         document.body.style.overflow = '';
       }
       window.history.pushState({ page: 'main' }, '', window.location.href);
+      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
@@ -84,12 +87,14 @@ function setupBackButtonHandler() {
         document.body.style.overflow = '';
       }
       window.history.pushState({ page: 'main' }, '', window.location.href);
+      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
     if (duplicateModal && duplicateModal.classList.contains('show')) {
       duplicateModal.classList.remove('show');
       window.history.pushState({ page: 'main' }, '', window.location.href);
+      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
@@ -102,23 +107,19 @@ function setupBackButtonHandler() {
         document.body.style.overflow = '';
       }
       window.history.pushState({ page: 'main' }, '', window.location.href);
+      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
     // 모든 모달이 닫혀있으면 앱 종료 확인
     const currentTime = Date.now();
     if (currentTime - lastBackPressTime < BACK_PRESS_INTERVAL) {
-      // 2초 내에 다시 뒤로가기 누름 - 앱 종료 확인
-      if (confirm('앱을 종료하시겠습니까?')) {
-        window.close();
-        // window.close()가 동작하지 않을 경우를 대비
-        if (!window.closed) {
-          // 히스토리를 모두 지우고 about:blank로 이동
-          window.location.href = 'about:blank';
-        }
-      } else {
-        // 취소하면 히스토리 상태 복원
-        window.history.pushState({ page: 'main' }, '', window.location.href);
+      // 2초 내에 다시 뒤로가기 누름 - 앱 종료
+      window.close();
+      // window.close()가 동작하지 않을 경우를 대비
+      if (!window.closed) {
+        // 히스토리를 모두 지우고 about:blank로 이동
+        window.location.href = 'about:blank';
       }
       lastBackPressTime = 0;
     } else {
