@@ -21,6 +21,9 @@ if (location.protocol === 'file:') {
 }
 
 // 갤럭시폰 뒤로가기 버튼 처리
+let lastBackPressTime = 0;
+const BACK_PRESS_INTERVAL = 2000; // 2초
+
 function setupBackButtonHandler() {
   // 초기 히스토리 상태 추가
   if (window.history.length === 1) {
@@ -102,9 +105,80 @@ function setupBackButtonHandler() {
       return;
     }
 
-    // 모든 모달이 닫혀있으면 히스토리 상태 유지
-    window.history.pushState({ page: 'main' }, '', window.location.href);
+    // 모든 모달이 닫혀있으면 앱 종료 확인
+    const currentTime = Date.now();
+    if (currentTime - lastBackPressTime < BACK_PRESS_INTERVAL) {
+      // 2초 내에 다시 뒤로가기 누름 - 앱 종료 확인
+      if (confirm('앱을 종료하시겠습니까?')) {
+        window.close();
+        // window.close()가 동작하지 않을 경우를 대비
+        if (!window.closed) {
+          // 히스토리를 모두 지우고 about:blank로 이동
+          window.location.href = 'about:blank';
+        }
+      } else {
+        // 취소하면 히스토리 상태 복원
+        window.history.pushState({ page: 'main' }, '', window.location.href);
+      }
+      lastBackPressTime = 0;
+    } else {
+      // 첫 번째 뒤로가기 - 토스트 메시지 표시
+      lastBackPressTime = currentTime;
+      showExitToast();
+      window.history.pushState({ page: 'main' }, '', window.location.href);
+    }
   });
+}
+
+// 종료 안내 토스트 메시지 표시
+function showExitToast() {
+  // 기존 토스트가 있으면 제거
+  const existingToast = document.getElementById('exitToast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  // 새 토스트 생성
+  const toast = document.createElement('div');
+  toast.id = 'exitToast';
+  toast.textContent = '뒤로 버튼을 한 번 더 누르면 종료됩니다';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    z-index: 10000;
+    animation: fadeInOut 2s ease-in-out;
+  `;
+
+  // 애니메이션 스타일 추가
+  if (!document.getElementById('toastAnimation')) {
+    const style = document.createElement('style');
+    style.id = 'toastAnimation';
+    style.textContent = `
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+        10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(toast);
+
+  // 2초 후 제거
+  setTimeout(() => {
+    if (toast && toast.parentNode) {
+      toast.remove();
+    }
+  }, 2000);
 }
 
 // 앱 초기화

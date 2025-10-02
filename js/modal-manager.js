@@ -221,6 +221,11 @@ export class ModalManager {
       this.commentUnsub();
       this.commentUnsub = null;
     }
+
+    // 히스토리 되돌리기 (메인 화면으로)
+    if (window.history.state?.page === 'modal') {
+      window.history.back();
+    }
   }
 
   renderStrip() {
