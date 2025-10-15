@@ -36,13 +36,16 @@ function setupBackButtonHandler() {
   // 뒤로가기 버튼 이벤트 처리
   window.addEventListener('popstate', (event) => {
     console.log('🔙 뒤로가기 버튼 감지');
-    // 모달이 열려있으면 모달 닫기
+
+    // 모달이 열려있는지 확인
     const modal = document.getElementById('modal');
     const dayGridOverlay = document.getElementById('dayGridOverlay');
     const scheduleModal = document.getElementById('scheduleModal');
     const commentModal = document.getElementById('commentModal');
     const duplicateModal = document.getElementById('duplicateModal');
     const growthModal = document.getElementById('growthModal');
+
+    let isAnyModalOpen = false;
 
     if (modal && modal.classList.contains('show')) {
       // 모달 매니저의 hideModal 함수 호출
@@ -52,24 +55,18 @@ function setupBackButtonHandler() {
         modal.classList.remove('show');
         document.body.style.overflow = '';
       }
-      window.history.pushState({ page: 'main' }, '', window.location.href);
-      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
-      return;
+      isAnyModalOpen = true;
     }
-
-    if (dayGridOverlay && dayGridOverlay.classList.contains('show')) {
+    else if (dayGridOverlay && dayGridOverlay.classList.contains('show')) {
       // UI 매니저의 hideDayGrid 함수 호출
       if (window.app?.uiManager?.hideDayGrid) {
         window.app.uiManager.hideDayGrid();
       } else {
         dayGridOverlay.classList.remove('show');
       }
-      window.history.pushState({ page: 'main' }, '', window.location.href);
-      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
-      return;
+      isAnyModalOpen = true;
     }
-
-    if (scheduleModal && scheduleModal.classList.contains('show')) {
+    else if (scheduleModal && scheduleModal.classList.contains('show')) {
       // UI 매니저의 hideScheduleModal 함수 호출
       if (window.app?.uiManager?.hideScheduleModal) {
         window.app.uiManager.hideScheduleModal();
@@ -77,12 +74,9 @@ function setupBackButtonHandler() {
         scheduleModal.classList.remove('show');
         document.body.style.overflow = '';
       }
-      window.history.pushState({ page: 'main' }, '', window.location.href);
-      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
-      return;
+      isAnyModalOpen = true;
     }
-
-    if (commentModal && commentModal.classList.contains('show')) {
+    else if (commentModal && commentModal.classList.contains('show')) {
       // UI 매니저의 hideCommentModal 함수 호출
       if (window.app?.uiManager?.hideCommentModal) {
         window.app.uiManager.hideCommentModal();
@@ -90,19 +84,13 @@ function setupBackButtonHandler() {
         commentModal.classList.remove('show');
         document.body.style.overflow = '';
       }
-      window.history.pushState({ page: 'main' }, '', window.location.href);
-      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
-      return;
+      isAnyModalOpen = true;
     }
-
-    if (duplicateModal && duplicateModal.classList.contains('show')) {
+    else if (duplicateModal && duplicateModal.classList.contains('show')) {
       duplicateModal.classList.remove('show');
-      window.history.pushState({ page: 'main' }, '', window.location.href);
-      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
-      return;
+      isAnyModalOpen = true;
     }
-
-    if (growthModal && growthModal.classList.contains('show')) {
+    else if (growthModal && growthModal.classList.contains('show')) {
       // 성장일지 매니저의 hideGrowthModal 함수 호출
       if (window.app?.growthManager?.hideGrowthModal) {
         window.app.growthManager.hideGrowthModal();
@@ -110,8 +98,12 @@ function setupBackButtonHandler() {
         growthModal.classList.remove('show');
         document.body.style.overflow = '';
       }
+      isAnyModalOpen = true;
+    }
+
+    // 모달을 닫았으면 히스토리 복원하고 종료
+    if (isAnyModalOpen) {
       window.history.pushState({ page: 'main' }, '', window.location.href);
-      lastBackPressTime = 0; // 모달 닫을 때 타이머 리셋
       return;
     }
 
