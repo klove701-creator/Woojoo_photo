@@ -23,15 +23,19 @@ if (location.protocol === 'file:') {
 // 갤럭시폰 뒤로가기 버튼 처리
 let lastBackPressTime = 0;
 const BACK_PRESS_INTERVAL = 2000; // 2초
+let historyInitialized = false;
 
 function setupBackButtonHandler() {
-  // 초기 히스토리 상태 추가
-  if (window.history.length === 1) {
+  // 초기 히스토리 상태 추가 (중복 방지)
+  if (!historyInitialized) {
     window.history.pushState({ page: 'main' }, '', window.location.href);
+    historyInitialized = true;
+    console.log('✅ 히스토리 초기화 완료');
   }
 
   // 뒤로가기 버튼 이벤트 처리
   window.addEventListener('popstate', (event) => {
+    console.log('🔙 뒤로가기 버튼 감지');
     // 모달이 열려있으면 모달 닫기
     const modal = document.getElementById('modal');
     const dayGridOverlay = document.getElementById('dayGridOverlay');
@@ -115,6 +119,7 @@ function setupBackButtonHandler() {
     const currentTime = Date.now();
     if (currentTime - lastBackPressTime < BACK_PRESS_INTERVAL) {
       // 2초 내에 다시 뒤로가기 누름 - 앱 종료
+      console.log('🚪 앱 종료 시도');
       window.close();
       // window.close()가 동작하지 않을 경우를 대비
       if (!window.closed) {
@@ -124,12 +129,24 @@ function setupBackButtonHandler() {
       lastBackPressTime = 0;
     } else {
       // 첫 번째 뒤로가기 - 토스트 메시지 표시
+      console.log('⚠️ 종료 경고 표시');
       lastBackPressTime = currentTime;
       showExitToast();
+      // 히스토리 상태 복원
       window.history.pushState({ page: 'main' }, '', window.location.href);
     }
   });
 }
+
+// 페이지 로드/새로고침 시 히스토리 재설정
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted || performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+    console.log('📄 페이지 재로드 감지 - 히스토리 리셋');
+    historyInitialized = false;
+    lastBackPressTime = 0;
+    setupBackButtonHandler();
+  }
+});
 
 // 종료 안내 토스트 메시지 표시
 function showExitToast() {

@@ -23,6 +23,7 @@ export class StorageManager {
     this.db = null;
     this.firebaseOn = false;
     this.unsubscribers = new Map(); // 구독 관리
+    this.lastUploadLogTime = 0; // 마지막 업로드 로그 기록 시간
   }
 
   // Firebase 초기화
@@ -457,6 +458,19 @@ export class StorageManager {
 
   // 활동 로그 저장
   async saveActivityLog(action, details = {}) {
+    // 업로드 액션은 5분에 한 번만 로그 기록
+    if (action === 'upload') {
+      const now = Date.now();
+      const fiveMinutes = 5 * 60 * 1000;
+
+      if (now - this.lastUploadLogTime < fiveMinutes) {
+        console.log('업로드 로그 생략 (5분 미만 경과)');
+        return;
+      }
+
+      this.lastUploadLogTime = now;
+    }
+
     const log = {
       timestamp: Date.now(),
       action: action,
