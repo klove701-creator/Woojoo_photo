@@ -127,8 +127,20 @@ export class PhotoManager {
   // 파일 처리 (압축, 검증 등)
   async processFile(file) {
     // 파일 크기 검증
-    if (isVideoFile(file) && file.size > 100 * 1024 * 1024) {
-      throw new Error('동영상은 100MB 이하만 업로드 가능합니다.');
+    if (isVideoFile(file) && file.size > 500 * 1024 * 1024) {
+      throw new Error('동영상은 500MB 이하만 업로드 가능합니다.');
+    }
+
+    // 동영상 압축 (50MB 초과시)
+    if (isVideoFile(file) && file.size > 50 * 1024 * 1024) {
+      try {
+        const compressedFile = await this.compressVideo(file);
+        console.log(`🗜️ 동영상 압축 완료: ${(file.size/1024/1024).toFixed(1)}MB → ${(compressedFile.size/1024/1024).toFixed(1)}MB`);
+        return compressedFile;
+      } catch (e) {
+        console.log('동영상 압축 실패, 원본 사용:', e);
+        return file;
+      }
     }
 
     // 이미지 압축 (10MB 초과시)
@@ -150,7 +162,7 @@ export class PhotoManager {
   async compressImage(file) {
     const img = new Image();
     const url = URL.createObjectURL(file);
-    
+
     await new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = reject;
@@ -172,18 +184,111 @@ export class PhotoManager {
 
     canvas.width = width;
     canvas.height = height;
-    
+
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, width, height);
 
-    const blob = await new Promise(resolve => 
+    const blob = await new Promise(resolve =>
       canvas.toBlob(resolve, 'image/jpeg', 0.9)
     );
 
     URL.revokeObjectURL(url);
-    
+
     return new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
       type: 'image/jpeg'
+    });
+  }
+
+  // 동영상 압축
+  async compressVideo(file) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const url = URL.createObjectURL(file);
+
+      video.onloadedmetadata = async () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // 해상도 조정 (최대 720p)
+          let width = video.videoWidth;
+          let height = video.videoHeight;
+          const maxWidth = 1280;
+          const maxHeight = 720;
+
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // MediaRecorder를 사용한 압축
+          const stream = canvas.captureStream(30); // 30fps
+
+          // 비디오 트랙에서 오디오 추출 시도
+          video.src = url;
+          if (video.captureStream) {
+            const videoStream = video.captureStream();
+            const audioTracks = videoStream.getAudioTracks();
+            audioTracks.forEach(track => stream.addTrack(track));
+          }
+
+          const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'video/webm;codecs=vp8,opus',
+            videoBitsPerSecond: 2500000 // 2.5Mbps (화질 낮춤)
+          });
+
+          const chunks = [];
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              chunks.push(e.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.webm'), {
+              type: 'video/webm'
+            });
+            URL.revokeObjectURL(url);
+            resolve(compressedFile);
+          };
+
+          // 비디오 재생하면서 캔버스에 그리기
+          video.play();
+          mediaRecorder.start();
+
+          const drawFrame = () => {
+            if (!video.paused && !video.ended) {
+              ctx.drawImage(video, 0, 0, width, height);
+              requestAnimationFrame(drawFrame);
+            }
+          };
+
+          video.onended = () => {
+            setTimeout(() => {
+              mediaRecorder.stop();
+              video.pause();
+            }, 100);
+          };
+
+          drawFrame();
+
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          reject(error);
+        }
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('동영상 로드 실패'));
+      };
+
+      video.src = url;
     });
   }
 
